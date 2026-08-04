@@ -18,8 +18,6 @@ from app.models.base import Base
 if TYPE_CHECKING:
     from app.models.incident import Incident
     from app.models.user import User
-    from app.models.history import IncidentHistory
-    from app.models.audit_log import AuditLog
 
 
 class IncidentComment(Base):
