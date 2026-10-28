@@ -8,7 +8,6 @@ from app.models.enums import UserRole
 from app.repositories import UserRepository
 from app.security import hash_password
 
-
 email_adapter = TypeAdapter(EmailStr)
 
 

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from sqlalchemy.orm import Session
 
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.repositories import UserRepository
 
 
@@ -62,3 +62,24 @@ def test_get_by_email_returns_none_when_user_does_not_exist() -> None:
 
     assert result is None
     db.scalar.assert_called_once()
+
+
+def test_create_adds_user_and_flushes_session() -> None:
+    db = MagicMock(spec=Session)
+    repository = UserRepository(db)
+
+    user = repository.create(
+        email="  Emile@Example.com  ",
+        password_hash="hashed-password",
+        full_name="  Emile Zehouri  ",
+        role=UserRole.USER,
+    )
+
+    assert user.email == "emile@example.com"
+    assert user.password_hash == "hashed-password"
+    assert user.full_name == "Emile Zehouri"
+    assert user.role == UserRole.USER
+    assert user.is_active is True
+
+    db.add.assert_called_once_with(user)
+    db.flush.assert_called_once_with()

@@ -2,6 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+''' pydantic is a data validation and parsing python library '''
+
 
 class LoginRequest(BaseModel):
     model_config = ConfigDict(
