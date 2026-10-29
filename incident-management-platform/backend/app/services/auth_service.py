@@ -89,6 +89,14 @@ class AuthService:
 
         access_token = create_access_token(user.id)
 
+        if not access_token:
+            self.audit_repository.create(
+                user_id=user.id,
+                event_type=AuditEventType.LOGOUT,
+                result=AuditResult.SUCCESS,
+                details={"reason": "logout_account"},
+            )
+
         self.audit_repository.create(
             user_id=user.id,
             event_type=AuditEventType.LOGIN_SUCCESS,

@@ -2,9 +2,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.models.enums import UserRole
+from app.models.enums import AuditEventType, AuditResult, UserRole
 from app.models.user import User
-from app.repositories import UserRepository
+from app.repositories.audit_repository import AuditRepository
+from app.repositories.user_repository import UserRepository
 from app.services import (
     AuthenticationError,
     AuthService,
@@ -27,13 +28,23 @@ def create_user(
     )
 
 
-def test_authenticate_returns_user_and_token() -> None:
-    repository = MagicMock(spec=UserRepository)
+# connexion réussie → LOGIN_SUCCESS
+
+
+def test_success_authenticate_returns_user_and_token() -> None:
+    user_repository = MagicMock(spec=UserRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
     user = create_user()
+    ip_address = "192.0.2.1"
+    user_agent = "pytest-client"
 
-    repository.get_by_email.return_value = user
+    service = AuthService(
+        user_repository,
+        audit_repository,
+    )
 
-    service = AuthService(repository)
+    user_repository.get_by_email.return_value = user
 
     with (
         patch(
@@ -48,28 +59,48 @@ def test_authenticate_returns_user_and_token() -> None:
         result = service.authenticate(
             email="emile@example.com",
             password="correct-password",
+            ip_address=ip_address,
+            user_agent=user_agent,
         )
 
     assert result.user is user
+
     assert result.access_token == "generated-access-token"
 
-    repository.get_by_email.assert_called_once_with(
-        "emile@example.com"
-    )
+    user_repository.get_by_email.assert_called_once_with("emile@example.com")
 
     verify_password_mock.assert_called_once_with(
         "correct-password",
         "stored-password-hash",
     )
 
+    audit_repository.create.assert_called_once_with(
+        user_id=user.id,
+        event_type=AuditEventType.LOGIN_SUCCESS,
+        result=AuditResult.SUCCESS,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+
     create_token_mock.assert_called_once_with(1)
 
 
-def test_authenticate_rejects_unknown_user() -> None:
-    repository = MagicMock(spec=UserRepository)
-    repository.get_by_email.return_value = None
+# utilisateur inexistant → LOGIN_FAILURE
 
-    service = AuthService(repository)
+
+def test_authenticate_rejects_unknown_user() -> None:
+    user_repository = MagicMock(spec=UserRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    ip_address = None
+    user_agent = None
+
+    service = AuthService(
+        user_repository,
+        audit_repository,
+    )
+
+    user_repository.get_by_email.return_value = None
 
     with pytest.raises(AuthenticationError):
         service.authenticate(
@@ -77,12 +108,36 @@ def test_authenticate_rejects_unknown_user() -> None:
             password="password",
         )
 
+    user_repository.get_by_email.assert_called_once_with("unknown@example.com")
+
+    audit_repository.create.assert_called_once_with(
+        event_type=AuditEventType.LOGIN_FAILURE,
+        result=AuditResult.FAILURE,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        details={
+            "reason": "invalid_credentials",
+        },
+    )
+
+
+# mauvais mot de passe → LOGIN_FAILURE
+
 
 def test_authenticate_rejects_incorrect_password() -> None:
-    repository = MagicMock(spec=UserRepository)
-    repository.get_by_email.return_value = create_user()
+    user_repository = MagicMock(spec=UserRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
 
-    service = AuthService(repository)
+    user = create_user()
+    ip_address = "192.0.2.1"
+    user_agent = "pytest-client"
+
+    user_repository.get_by_email.return_value = user
+
+    service = AuthService(
+        user_repository,
+        audit_repository,
+    )
 
     with (
         patch(
@@ -97,18 +152,41 @@ def test_authenticate_rejects_incorrect_password() -> None:
         service.authenticate(
             email="emile@example.com",
             password="wrong-password",
+            ip_address=ip_address,
+            user_agent=user_agent,
         )
 
     create_token_mock.assert_not_called()
 
-
-def test_authenticate_rejects_inactive_user() -> None:
-    repository = MagicMock(spec=UserRepository)
-    repository.get_by_email.return_value = create_user(
-        is_active=False
+    audit_repository.create.assert_called_once_with(
+        user_id=user.id,
+        event_type=AuditEventType.LOGIN_FAILURE,
+        result=AuditResult.FAILURE,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        details={
+            "reason": "invalid_credentials",
+        },
     )
 
-    service = AuthService(repository)
+
+# compte inactif → LOGIN_FAILURE
+
+
+def test_authenticate_rejects_inactive_user() -> None:
+    user_repository = MagicMock(spec=UserRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    user = create_user(is_active=False)
+    ip_address = None
+    user_agent = None
+
+    user_repository.get_by_email.return_value = user
+
+    service = AuthService(
+        user_repository,
+        audit_repository,
+    )
 
     with (
         patch(
@@ -126,3 +204,14 @@ def test_authenticate_rejects_inactive_user() -> None:
         )
 
     create_token_mock.assert_not_called()
+
+    audit_repository.create.assert_called_once_with(
+        user_id=user.id,
+        event_type=AuditEventType.LOGIN_FAILURE,
+        result=AuditResult.FAILURE,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        details={
+            "reason": "inactive_account",
+        },
+    )

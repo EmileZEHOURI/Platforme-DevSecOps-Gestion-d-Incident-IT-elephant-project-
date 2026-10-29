@@ -44,9 +44,7 @@ def read_role() -> UserRole:
     available_roles = ", ".join(role.value for role in UserRole)
 
     while True:
-        raw_role = input(
-            f"Rôle [{available_roles}] (USER par défaut) : "
-        ).strip()
+        raw_role = input(f"Rôle [{available_roles}] (USER par défaut) : ").strip()
 
         if not raw_role:
             return UserRole.USER

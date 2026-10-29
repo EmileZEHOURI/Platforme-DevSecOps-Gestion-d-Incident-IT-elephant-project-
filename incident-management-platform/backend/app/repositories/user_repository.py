@@ -24,14 +24,14 @@ class UserRepository:
         statement = select(User).where(func.lower(User.email) == normalized_email)
 
         return self.db.scalar(statement)
-    
+
     def create(
-    self,
-    *,
-    email: str,
-    password_hash: str,
-    full_name: str,
-    role: UserRole = UserRole.USER,
+        self,
+        *,
+        email: str,
+        password_hash: str,
+        full_name: str,
+        role: UserRole = UserRole.USER,
     ) -> User:
         """Prépare et ajoute un utilisateur à la session."""
 
@@ -47,5 +47,3 @@ class UserRepository:
         self.db.flush()
 
         return user
-    
-    

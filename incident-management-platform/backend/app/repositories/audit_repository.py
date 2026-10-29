@@ -42,7 +42,6 @@ class AuditRepository:
 
         return audit_log
 
-
     def get_by_id(self, user_id: int) -> AuditLog | None:
         """Recherche un utilisateur par sa clé primaire."""
 
