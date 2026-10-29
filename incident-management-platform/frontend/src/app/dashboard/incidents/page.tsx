@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { Badge, PageHeader, StatePanel } from "@/components/ui";
+export default function IncidentsPage() { return <><PageHeader title="Incidents" description="Centralisez les signalements et suivez leur résolution." /><section className="panel"><div className="panel-heading"><h2>Registre des incidents</h2><Badge tone="warning">Service à connecter</Badge></div><StatePanel title="Votre futur espace de suivi" description="La création, l’affectation et le suivi seront disponibles après la mise en service du module incidents. Aucune donnée n’est encore chargée."><Link href="/dashboard/services" className="button button-secondary">Consulter l’état des services</Link></StatePanel></section></>; }
