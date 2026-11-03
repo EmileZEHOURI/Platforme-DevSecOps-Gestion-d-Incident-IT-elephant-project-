@@ -6,10 +6,12 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.routes.auth import router as auth_router
+from app.api.routes.incidents import router as incidents_router
 from app.core.database import get_db
 
 app = FastAPI(title="Incident Management API", version="0.1.0")
 app.include_router(auth_router)
+app.include_router(incidents_router)
 
 allowed_origins = [
     "http://localhost:3000",
