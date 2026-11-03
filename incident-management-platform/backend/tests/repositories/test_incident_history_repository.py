@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+import pytest
 from sqlalchemy.orm import Session
 
 from app.models.enums import (
@@ -15,7 +16,8 @@ def create_incident_history_data() -> IncidentHistory:
     )
 
 
-def test_create_adds_incident_and_flushes_session() -> None:
+@pytest.mark.parametrize("action", list(IncidentHistoryAction))
+def test_create_adds_incident_and_flushes_session(action) -> None:
     db = MagicMock(spec=Session)
     repository = IncidentHistoryRepository(db)
     incident_data = create_incident_history_data()
@@ -23,12 +25,12 @@ def test_create_adds_incident_and_flushes_session() -> None:
     history_entry = repository.create(
         incident_id=incident_data.incident_id,
         actor_id=incident_data.actor_id,
-        action=incident_data.action,
+        action=action,
     )
 
     assert history_entry.incident_id == 42
     assert history_entry.actor_id == 2
-    assert history_entry.action == IncidentHistoryAction.INCIDENT_CREATED
+    assert history_entry.action == action
 
     db.add.assert_called_once_with(history_entry)
     db.flush.assert_called_once_with()

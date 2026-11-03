@@ -8,6 +8,7 @@ from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus
 class IncidentCreate(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
+        str_strip_whitespace=True,
     )
 
     title: str = Field(

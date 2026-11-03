@@ -2,6 +2,7 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public detail?: unknown,
   ) {
     super(message);
   }
@@ -28,6 +29,9 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     );
   }
   if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null);
+    const detail = body && typeof body === "object" && "detail" in body
+      ? body.detail : undefined;
     throw new ApiError(
       response.status,
       response.status === 401
@@ -35,6 +39,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
         : response.status === 403
           ? "Vous ne disposez pas des autorisations nécessaires."
           : "Le service n’a pas pu traiter la demande. Réessayez dans un instant.",
+      detail,
     );
   }
   return response.json() as Promise<T>;

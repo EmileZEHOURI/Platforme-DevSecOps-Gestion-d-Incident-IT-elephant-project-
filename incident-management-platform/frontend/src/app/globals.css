@@ -10,3 +10,36 @@
 @media(max-width:1100px){.sidebar{width:215px;padding-inline:16px}.app-body{margin-left:215px;width:calc(100% - 215px)}.main-content{padding:26px}.topbar{padding-inline:26px}.metric-grid{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}.login-story{padding:35px}}
 @media(max-width:760px){.app-shell{display:block}.sidebar{position:static;width:100%;padding:17px 20px}.sidebar .brand{font-size:17px}.sidebar .workspace-label,.sidebar .nav-label,.sidebar .sidebar-footer{display:none}.sidebar nav{display:none;margin-top:20px}.sidebar.is-open nav{display:block}.app-body{margin:0;width:100%}.menu-toggle{display:inline-flex}.topbar{padding:8px 12px;min-height:62px}.breadcrumb{display:none}.topbar-actions{gap:5px}.topbar-actions .button{font-size:11px;padding-inline:9px}.main-content{padding:25px 18px}.page-heading{align-items:start;flex-direction:column;gap:18px}h1{font-size:26px}.overview-banner{padding:22px}.overview-banner h2{font-size:23px}.banner-grid{display:none}.metric-grid{gap:10px}.metric{padding:16px}.metric>div{font-size:11px}.service-row{padding-inline:16px}.panel-heading{padding-inline:16px}.app-footer{padding:18px}.app-footer>span{display:none}.profile-details>div{grid-template-columns:1fr;gap:6px}.login-layout{grid-template-columns:1fr}.login-story{min-height:auto;padding:24px}.story-content,.story-footer{display:none}.login-form-panel{padding:48px 25px;min-height:calc(100vh - 87px)}.login-form-wrap h2{font-size:32px}.state-panel{padding-inline:18px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* Incident creation: extends the existing shell and shared form controls. */
+.incident-back { display: inline-block; margin-bottom: 22px; color: var(--accent); font-size: 12px; }
+.incident-create-grid { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(220px, 1fr); gap: 28px; align-items: start; }
+.incident-form .panel-heading > span { font-size: 11px; }
+.incident-form-body { padding: 26px; }
+.incident-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.incident-form textarea, .incident-form select { width: 100%; border: 1px solid #c3cec8; background: white; border-radius: 6px; padding: 12px 13px; font: inherit; font-size: 13px; min-height: 47px; }
+.incident-form textarea { resize: vertical; line-height: 1.7; }
+.incident-form textarea::placeholder { color: #727d78; }
+.incident-form [aria-invalid=true] { border-color: #ad493b; }
+.incident-form :disabled { opacity: .65; cursor: wait; }
+.incident-field-meta { display: flex; justify-content: space-between; gap: 15px; margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.incident-field-meta > span:last-child { white-space: nowrap; }
+.incident-field-error { color: #963d33; font-size: 12px; margin-top: 5px; line-height: 1.5; }
+.incident-select-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.incident-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border-top: 1px solid var(--border); padding-top: 22px; margin-top: 5px; }
+.incident-actions > .muted { font-size: 12px; }
+.incident-guidance { padding: 15px 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.incident-guidance h2 { color: var(--foreground); font-size: 17px; line-height: 1.5; margin-bottom: 12px; }
+.incident-guidance h3 { color: var(--foreground); font-weight: 600; font-size: 13px; margin: 28px 0 15px; }
+.incident-guidance dt { color: var(--foreground); font-weight: 550; margin-top: 15px; }
+.incident-guidance dd { margin: 3px 0 0; }
+.incident-text-link { display: inline-block; text-decoration: underline; margin-top: 8px; min-height: 32px; }
+.incident-success { padding: 32px; }
+.incident-success h2 { font-size: 23px; margin: 18px 0 10px; overflow-wrap: anywhere; }
+.incident-receipt { margin: 25px 0; }
+.incident-receipt > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 15px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+.incident-receipt dt { color: var(--muted); }
+.incident-receipt dd { margin: 0; overflow-wrap: anywhere; }
+@media(max-width:1000px) { .incident-create-grid { grid-template-columns: 1fr; }.incident-guidance { padding: 0 5px; } }
+@media(max-width:760px) { .incident-form-body, .incident-success { padding: 20px; }.incident-select-grid { grid-template-columns: 1fr; gap: 0; }.incident-form .panel-heading { align-items: start; flex-direction: column; }.incident-field-meta { font-size: 10px; }.incident-receipt > div { grid-template-columns: 1fr; gap: 6px; } }
+

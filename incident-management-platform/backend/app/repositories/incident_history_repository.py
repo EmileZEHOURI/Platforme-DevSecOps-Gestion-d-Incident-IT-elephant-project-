@@ -22,7 +22,7 @@ class IncidentHistoryRepository:
         incident_history = IncidentHistory(
             incident_id=incident_id,
             actor_id=actor_id,
-            action=IncidentHistoryAction.INCIDENT_CREATED,
+            action=action,
             field_name=field_name,
             old_value=old_value,
             new_value=new_value,

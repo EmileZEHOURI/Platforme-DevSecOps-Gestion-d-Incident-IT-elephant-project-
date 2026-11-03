@@ -1,8 +1,8 @@
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models.user import User
+
 
 def test_authentication_lifecycle(test_user: User) -> None:
 

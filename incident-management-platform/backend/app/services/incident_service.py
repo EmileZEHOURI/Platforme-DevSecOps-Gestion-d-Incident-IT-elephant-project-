@@ -1,13 +1,6 @@
-# 1. créer l'incident avec created_by_id
-# 2. récupérer incident.id
-# 3. créer une entrée d'historique
-#    - incident_id = incident.id
-#    - actor_id = created_by_id
-#    - action = INCIDENT_CREATED
-# 4. retourner l'incident
-
-from app.models.enums import IncidentHistoryAction
+from app.models.enums import AuditEventType, AuditResult, IncidentHistoryAction
 from app.models.incident import Incident
+from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate
@@ -18,9 +11,11 @@ class IncidentService:
         self,
         incident_repository: IncidentRepository,
         incident_history_repository: IncidentHistoryRepository,
+        audit_repository: AuditRepository,
     ) -> None:
         self.incident_repository = incident_repository
         self.incident_history_repository = incident_history_repository
+        self.audit_repository = audit_repository
 
     def create_incident(
         self,
@@ -35,5 +30,12 @@ class IncidentService:
             incident_id=incident.id,
             actor_id=created_by_id,
             action=IncidentHistoryAction.INCIDENT_CREATED,
+        )
+        self.audit_repository.create(
+            event_type=AuditEventType.INCIDENT_CREATED,
+            result=AuditResult.SUCCESS,
+            user_id=created_by_id,
+            resource_type="incident",
+            resource_id=incident.id,
         )
         return incident

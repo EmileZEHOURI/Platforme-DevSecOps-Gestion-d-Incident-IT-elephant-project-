@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
 from app.models.user import User
+from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate, IncidentResponse
@@ -35,14 +36,16 @@ def create_incident(
     incident_service = IncidentService(
         incident_repository,
         incident_history_repository,
+        AuditRepository(db),
     )
 
     try:
         incident = incident_service.create_incident(
             data=data, created_by_id=current_user.id
         )
-        db.commit()
         db.refresh(incident)
+        response = IncidentResponse.model_validate(incident)
+        db.commit()
 
     except SQLAlchemyError:
         db.rollback()
@@ -52,4 +55,4 @@ def create_incident(
             detail="Échec de la création de l'incident",
         ) from None
 
-    return IncidentResponse.model_validate(incident)
+    return response

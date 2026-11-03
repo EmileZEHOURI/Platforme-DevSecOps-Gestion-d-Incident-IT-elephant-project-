@@ -1,12 +1,15 @@
 from unittest.mock import MagicMock
 
 from app.models.enums import (
+    AuditEventType,
+    AuditResult,
     IncidentCategory,
     IncidentHistoryAction,
     IncidentPriority,
     IncidentStatus,
 )
 from app.models.incident import Incident
+from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate
@@ -18,6 +21,7 @@ from app.services.incident_service import IncidentService
 def test_success_create_with_data_and_created_by_id() -> None:
     incident_repository = MagicMock(spec=IncidentRepository)
     incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
 
     # Simulation données envoyé par l'utilisateur
     incident_data = IncidentCreate(
@@ -45,6 +49,7 @@ def test_success_create_with_data_and_created_by_id() -> None:
     service = IncidentService(
         incident_repository,
         incident_history_repository,
+        audit_repository,
     )
 
     result = service.create_incident(
@@ -61,3 +66,10 @@ def test_success_create_with_data_and_created_by_id() -> None:
     )
 
     assert result is create_incident
+    audit_repository.create.assert_called_once_with(
+        event_type=AuditEventType.INCIDENT_CREATED,
+        result=AuditResult.SUCCESS,
+        user_id=2,
+        resource_type="incident",
+        resource_id=42,
+    )
