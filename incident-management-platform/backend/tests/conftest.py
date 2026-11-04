@@ -99,3 +99,20 @@ def test_user(db_session):
     )
     db_session.commit()
     return user
+
+
+@pytest.fixture
+def other_user(db_session):
+    repository = UserRepository(db_session)
+    user = repository.create(
+        email="other@example.com",
+        password_hash=hash_password("password"),
+        full_name="Other User",
+    )
+
+    db_session.commit()
+    db_session.refresh(user)
+
+    yield user
+
+    # La fixture db_session annule la transaction et nettoie les données.

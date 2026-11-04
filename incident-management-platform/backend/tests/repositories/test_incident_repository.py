@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from sqlalchemy.orm import Session
 
 from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus
+from app.models.incident import Incident
 from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate
 
@@ -14,6 +15,21 @@ def create_incident_data() -> IncidentCreate:
         category=IncidentCategory.ANOMALY,
         priority=IncidentPriority.MEDIUM,
     )
+
+
+def create_incident_list() -> list[Incident]:
+    return [
+        Incident(
+            id=number,
+            title=f"Incident {number}",
+            description="Incident de test",
+            category=IncidentCategory.ANOMALY,
+            priority=IncidentPriority.MEDIUM,
+            status=IncidentStatus.OPEN,
+            created_by_id=42,
+        )
+        for number in range(1, 4)
+    ]
 
 
 def test_create_adds_incident_and_flushes_session() -> None:
@@ -34,3 +50,43 @@ def test_create_adds_incident_and_flushes_session() -> None:
     db.add.assert_called_once_with(incident)
     db.flush.assert_called_once_with()
     db.commit.assert_not_called()
+
+
+def test_checking_incident_list() -> None:
+    db = MagicMock(spec=Session)
+    repository = IncidentRepository(db)
+
+    expected_incidents = create_incident_list()
+    db.scalars.return_value.all.return_value = expected_incidents
+
+    incidents_list = repository.list_by_creator(created_by_id=42)
+
+    assert len(incidents_list) == 3
+    assert all(incident.created_by_id == 42 for incident in incidents_list)
+    assert [incident.id for incident in incidents_list] == [1, 2, 3]
+    db.scalars.assert_called_once()
+
+
+def test_list_by_creator_returns_empty_list() -> None:
+    db = MagicMock(spec=Session)
+    db.scalars.return_value.all.return_value = []
+
+    repository = IncidentRepository(db)
+
+    result = repository.list_by_creator(created_by_id=42)
+
+    assert result == []
+    db.scalars.assert_called_once()
+    db.scalars.return_value.all.assert_called_once_with()
+
+
+def test_incident_find() -> None:
+    db= MagicMock(spec=Session)
+    repository = IncidentRepository(db)
+
+    expected_incidents = create_incident_list()
+    db.scalars.return_value.all.return_value = expected_incidents
+
+    incidents_list = repository.list_by_creator(created_by_id=42)
+
+    incidents_find = repository.get_by_id_and_creator

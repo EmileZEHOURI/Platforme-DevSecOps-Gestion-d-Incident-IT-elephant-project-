@@ -39,3 +39,10 @@ class IncidentService:
             resource_id=incident.id,
         )
         return incident
+
+    def list_user_incidents(
+        self,
+        created_by_id: int,
+    ) -> list[Incident]:
+
+        return self.incident_repository.list_by_creator(created_by_id=created_by_id)

@@ -56,3 +56,28 @@ def create_incident(
         ) from None
 
     return response
+
+
+@router.get(
+    "",
+    status_code=status.HTTP_200_OK,
+    response_model=list[IncidentResponse],
+)
+def get_incident_list(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> list[IncidentResponse]:
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        AuditRepository(db),
+    )
+
+    result = incident_service.list_user_incidents(created_by_id=current_user.id)
+
+    responses = [IncidentResponse.model_validate(incident) for incident in result]
+
+    return responses

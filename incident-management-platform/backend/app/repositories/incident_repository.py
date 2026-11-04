@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.enums import IncidentStatus
@@ -23,3 +24,26 @@ class IncidentRepository:
         self.db.flush()
 
         return incident
+
+    def list_by_creator(self, *, created_by_id: int) -> list[Incident]:
+        statement = (
+            select(Incident)
+            .where(Incident.created_by_id == created_by_id)
+            .order_by(Incident.created_at.desc())
+        )
+
+        return self.db.scalars(statement).all()
+
+    def get_by_id_and_creator(
+            self,
+            *,
+            incident_id:int,
+            created_by_id:int,
+    ) -> Incident | None :
+        statement = (
+            select(Incident)
+            .where(Incident.id == incident_id)
+            .where(Incident.created_by_id == created_by_id)
+        )
+
+        return self.db.execute(statement).scalar_one_or_none()

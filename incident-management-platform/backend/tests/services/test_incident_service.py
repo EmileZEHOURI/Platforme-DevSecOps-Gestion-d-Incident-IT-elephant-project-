@@ -18,6 +18,21 @@ from app.services.incident_service import IncidentService
 # le repository incident est appelé avec data et created_by_id,
 
 
+def create_incident_list() -> list[Incident]:
+    return [
+        Incident(
+            id=number,
+            title=f"Incident {number}",
+            description="Incident de test",
+            category=IncidentCategory.ANOMALY,
+            priority=IncidentPriority.MEDIUM,
+            status=IncidentStatus.OPEN,
+            created_by_id=42,
+        )
+        for number in range(1, 4)
+    ]
+
+
 def test_success_create_with_data_and_created_by_id() -> None:
     incident_repository = MagicMock(spec=IncidentRepository)
     incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
@@ -73,3 +88,44 @@ def test_success_create_with_data_and_created_by_id() -> None:
         resource_type="incident",
         resource_id=42,
     )
+
+
+def test_recuperation_list() -> None:
+    incident_repository = MagicMock(spec=IncidentRepository)
+    incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    expected_incidents = create_incident_list()
+
+    incident_repository.list_by_creator.return_value = expected_incidents
+
+    service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+    )
+
+    result = service.list_user_incidents(created_by_id=42)
+    incident_repository.list_by_creator.assert_called_once_with(created_by_id=42)
+
+    assert result is expected_incidents
+
+
+def test_recuperation_empty_list() -> None:
+    incident_repository = MagicMock(spec=IncidentRepository)
+    incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    expected_incidents = []
+
+    incident_repository.list_by_creator.return_value = expected_incidents
+
+    service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+    )
+
+    result = service.list_user_incidents(created_by_id=42)
+    incident_repository.list_by_creator.assert_called_once_with(created_by_id=42)
+    assert result is expected_incidents

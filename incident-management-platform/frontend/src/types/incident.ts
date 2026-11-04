@@ -10,6 +10,10 @@ export const incidentPriorities = {
 export type IncidentCategory = keyof typeof incidentCategories;
 export type IncidentPriority = keyof typeof incidentPriorities;
 
+export const incidentStatuses = {
+  OPEN: "Ouvert", IN_PROGRESS: "En cours", RESOLVED: "Résolu", CLOSED: "Clos",
+} as const;
+
 export interface IncidentCreate {
   title: string;
   description: string;
