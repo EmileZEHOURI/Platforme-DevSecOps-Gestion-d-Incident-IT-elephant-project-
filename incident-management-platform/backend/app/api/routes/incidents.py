@@ -11,7 +11,7 @@ from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate, IncidentResponse
-from app.services.incident_service import IncidentService
+from app.services.incident_service import IncidentNotFoundError, IncidentService
 
 router = APIRouter(
     prefix="/incidents",
@@ -81,3 +81,40 @@ def get_incident_list(
     responses = [IncidentResponse.model_validate(incident) for incident in result]
 
     return responses
+
+
+@router.get(
+    "/{incident_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=IncidentResponse,
+)
+def get_incident_detail(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    incident_id:int
+) -> IncidentResponse:
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        AuditRepository(db),
+    )
+
+    try:
+
+        result = incident_service.get_incident_detail(
+            incident_id=incident_id, created_by_id=current_user.id
+        )
+
+        response = IncidentResponse.model_validate(result)
+
+    except IncidentNotFoundError:
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Échec du chargement des détails de l'incident",
+        ) from None
+
+    return response

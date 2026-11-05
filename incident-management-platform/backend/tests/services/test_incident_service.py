@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+import pytest
 
 from app.models.enums import (
     AuditEventType,
@@ -13,7 +14,7 @@ from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate
-from app.services.incident_service import IncidentService
+from app.services.incident_service import IncidentNotFoundError, IncidentService
 
 # le repository incident est appelé avec data et created_by_id,
 
@@ -129,3 +130,49 @@ def test_recuperation_empty_list() -> None:
     result = service.list_user_incidents(created_by_id=42)
     incident_repository.list_by_creator.assert_called_once_with(created_by_id=42)
     assert result is expected_incidents
+
+
+def test_get_incident_details() -> None:
+    incident_repository = MagicMock(spec=IncidentRepository)
+    incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    expected_incident = Incident(
+        id=1,
+        title="Incident 1",
+        description="Incident de test",
+        category=IncidentCategory.ANOMALY,
+        priority=IncidentPriority.MEDIUM,
+        status=IncidentStatus.OPEN,
+        created_by_id=42,
+    )
+
+    incident_repository.get_by_id_and_creator.return_value = expected_incident
+
+    service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+    )
+
+    result = service.get_incident_detail(incident_id=1, created_by_id=42)
+    assert result is expected_incident
+
+
+def test_get_incident_details_error() -> None:
+    incident_repository = MagicMock(spec=IncidentRepository)
+    incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    expected_incident = None
+
+    incident_repository.get_by_id_and_creator.return_value = expected_incident
+
+    service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+    )
+
+    with pytest.raises(IncidentNotFoundError):
+        service.get_incident_detail(incident_id=1, created_by_id=42)

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { Badge, Button, StatePanel } from "@/components/ui";
+import { Button, StatePanel } from "@/components/ui";
+import { IncidentPriorityBadge, IncidentStatusBadge } from "@/components/incident-badges";
 import { ApiError } from "@/lib/api";
 import { listIncidents } from "@/services/incident.service";
-import { incidentCategories, incidentPriorities, incidentStatuses, type IncidentResponse } from "@/types/incident";
+import { incidentCategories, type IncidentResponse } from "@/types/incident";
 
 type ListState =
   | { status: "loading" }
@@ -23,11 +24,11 @@ function IncidentTable({ incidents }: { incidents: IncidentResponse[] }) {
         <thead><tr><th scope="col">Référence</th><th scope="col">Titre</th><th scope="col">Catégorie</th><th scope="col">Priorité</th><th scope="col">Statut</th><th scope="col">Créé le</th></tr></thead>
         <tbody>{incidents.map(incident => (
           <tr key={incident.id}>
-            <th scope="row" className="incident-reference">{incident.reference}</th>
+            <th scope="row" className="incident-reference"><Link className="incident-detail-link" href={`/dashboard/incidents/${incident.id}`} aria-label={`Voir le détail de ${incident.reference}`}>{incident.reference}</Link></th>
             <td className="incident-list-title">{incident.title}</td>
             <td>{incidentCategories[incident.category]}</td>
-            <td><Badge tone={incident.priority === "HIGH" || incident.priority === "CRITICAL" ? "warning" : "neutral"}>{incidentPriorities[incident.priority]}</Badge></td>
-            <td><Badge tone={incident.status === "RESOLVED" || incident.status === "CLOSED" ? "success" : incident.status === "IN_PROGRESS" ? "warning" : "neutral"}>{incidentStatuses[incident.status]}</Badge></td>
+            <td><IncidentPriorityBadge priority={incident.priority} /></td>
+            <td><IncidentStatusBadge status={incident.status} /></td>
             <td className="incident-list-date"><time dateTime={incident.created_at}>{dateFormat.format(new Date(incident.created_at))}</time></td>
           </tr>
         ))}</tbody>

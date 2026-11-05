@@ -6,6 +6,10 @@ from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate
 
 
+class IncidentNotFoundError(Exception):
+    """Incident Not Found"""
+
+
 class IncidentService:
     def __init__(
         self,
@@ -46,3 +50,13 @@ class IncidentService:
     ) -> list[Incident]:
 
         return self.incident_repository.list_by_creator(created_by_id=created_by_id)
+
+    def get_incident_detail(self, incident_id: int, created_by_id: int) -> Incident:
+        incident = self.incident_repository.get_by_id_and_creator(
+            created_by_id=created_by_id, incident_id=incident_id
+        )
+
+        if incident is None:
+            raise IncidentNotFoundError("Incident introuvable")
+
+        return incident 

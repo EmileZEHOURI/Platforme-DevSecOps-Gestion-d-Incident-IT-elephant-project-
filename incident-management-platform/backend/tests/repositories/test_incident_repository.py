@@ -80,13 +80,37 @@ def test_list_by_creator_returns_empty_list() -> None:
     db.scalars.return_value.all.assert_called_once_with()
 
 
-def test_incident_find() -> None:
+def test_incident_found() -> None:
     db= MagicMock(spec=Session)
     repository = IncidentRepository(db)
 
-    expected_incidents = create_incident_list()
-    db.scalars.return_value.all.return_value = expected_incidents
+    expected_incident = Incident(
+                id=1,
+                title="Incident 1",
+                description="Incident de test",
+                category=IncidentCategory.ANOMALY,
+                priority=IncidentPriority.MEDIUM,
+                status=IncidentStatus.OPEN,
+                created_by_id=42,
+            )
+    db.execute.return_value.scalar_one_or_none.return_value = expected_incident
 
-    incidents_list = repository.list_by_creator(created_by_id=42)
+    incidents_find = repository.get_by_id_and_creator(incident_id=1, created_by_id=42)
 
-    incidents_find = repository.get_by_id_and_creator
+    assert incidents_find is expected_incident
+    db.execute.assert_called_once()
+    
+def test_incident_not_found_or_not_authorized() -> None:
+    db= MagicMock(spec=Session)
+    repository = IncidentRepository(db)
+
+    expected_incident = None
+    db.execute.return_value.scalar_one_or_none.return_value = expected_incident
+
+    incidents_find = repository.get_by_id_and_creator(incident_id=1, created_by_id=42)
+
+    assert incidents_find is None
+    db.execute.assert_called_once()
+    
+
+    
