@@ -8,6 +8,7 @@ import { IncidentPriorityBadge, IncidentStatusBadge } from "@/components/inciden
 import { getIncident } from "@/services/incident.service";
 import { ApiError } from "@/lib/api";
 import { incidentCategories, type IncidentResponse } from "@/types/incident";
+import { IncidentComments } from "@/components/incident-comments";
 
 type DetailState = { status: "loading" }
   | { status: "success"; incident: IncidentResponse }
@@ -65,6 +66,7 @@ function DetailContent({ id }: { id: string }) {
           <div className="panel-heading"><h2 id="resolution-heading">Résolution</h2></div>
           <p className={`incident-detail-text ${incident.resolution ? "" : "muted"}`}>{incident.resolution || "Aucune résolution renseignée pour le moment."}</p>
         </section>
+        <IncidentComments key={incident.id} incident={incident} />
       </div>
       <div className="incident-detail-side">
         <section className="panel" aria-labelledby="information-heading">

@@ -6,6 +6,7 @@ from app.repositories.incident_repository import IncidentRepository
 from app.schemas.incident import IncidentCreate
 
 
+
 class IncidentNotFoundError(Exception):
     """Incident Not Found"""
 
