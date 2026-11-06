@@ -27,3 +27,10 @@ export function createIncident(data: IncidentCreate): Promise<IncidentResponse> 
     }),
   });
 }
+
+export function listAssignedIncidents(signal?: AbortSignal): Promise<IncidentResponse[]> {
+  return api<IncidentResponse[]>("/incidents/assigned", {
+    method: "GET",
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12000)]) : undefined,
+  });
+}

@@ -35,11 +35,11 @@ class IncidentRepository:
         return self.db.scalars(statement).all()
 
     def get_by_id_and_creator(
-            self,
-            *,
-            incident_id:int,
-            created_by_id:int,
-    ) -> Incident | None :
+        self,
+        *,
+        incident_id: int,
+        created_by_id: int,
+    ) -> Incident | None:
         statement = (
             select(Incident)
             .where(Incident.id == incident_id)
@@ -47,3 +47,12 @@ class IncidentRepository:
         )
 
         return self.db.execute(statement).scalar_one_or_none()
+
+    def list_by_assignee(self, *, assigned_to_id: int) -> list[Incident]:
+        statement = (
+            select(Incident)
+            .where(Incident.assigned_to_id == assigned_to_id)
+            .order_by(Incident.created_at.desc())
+        )
+
+        return self.db.scalars(statement).all()

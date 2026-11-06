@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.main import app
 from app.models.base import Base
+from app.models.enums import UserRole
 from app.repositories import UserRepository
 from app.security import hash_password
 
@@ -116,3 +117,49 @@ def other_user(db_session):
     yield user
 
     # La fixture db_session annule la transaction et nettoie les données.
+
+
+@pytest.fixture
+def technician_user(db_session):
+    repository = UserRepository(db_session)
+    user = repository.create(
+        email="technician@example.com",
+        password_hash=hash_password("password"),
+        full_name="Technician User",
+        role=UserRole.TECHNICIAN
+    )
+
+    db_session.commit()
+    db_session.refresh(user)
+
+    yield user
+
+@pytest.fixture
+def other_technician_user(db_session):
+    repository = UserRepository(db_session)
+    user = repository.create(
+        email="other_technician@example.com",
+        password_hash=hash_password("password"),
+        full_name="Technician User",
+        role=UserRole.TECHNICIAN
+    )
+
+    db_session.commit()
+    db_session.refresh(user)
+
+    yield user
+
+@pytest.fixture
+def admin_user(db_session):
+    repository = UserRepository(db_session)
+    user = repository.create(
+        email="admin@example.com",
+        password_hash=hash_password("password"),
+        full_name="Admin User",
+        role=UserRole.ADMIN
+    )
+
+    db_session.commit()
+    db_session.refresh(user)
+
+    yield user

@@ -61,3 +61,10 @@ class IncidentService:
             raise IncidentNotFoundError("Incident introuvable")
 
         return incident 
+
+    def list_assigned_incidents(
+            self,
+            assigned_to_id:int,
+    )-> list[Incident]:
+
+        return self.incident_repository.list_by_assignee(assigned_to_id=assigned_to_id)

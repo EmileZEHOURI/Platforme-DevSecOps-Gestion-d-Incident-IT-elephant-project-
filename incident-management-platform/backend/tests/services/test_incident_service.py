@@ -29,6 +29,7 @@ def create_incident_list() -> list[Incident]:
             priority=IncidentPriority.MEDIUM,
             status=IncidentStatus.OPEN,
             created_by_id=42,
+            assigned_to_id=1,
         )
         for number in range(1, 4)
     ]
@@ -176,3 +177,45 @@ def test_get_incident_details_error() -> None:
 
     with pytest.raises(IncidentNotFoundError):
         service.get_incident_detail(incident_id=1, created_by_id=42)
+
+
+def test_recuperation_list_assigned_incident() -> None:
+    incident_repository = MagicMock(spec=IncidentRepository)
+    incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    expected_incidents = create_incident_list()
+
+    incident_repository.list_by_assignee.return_value = expected_incidents
+
+    service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+    )
+
+    result = service.list_assigned_incidents(assigned_to_id=1)
+    incident_repository.list_by_assignee.assert_called_once_with(assigned_to_id=1)
+
+    assert result is expected_incidents
+
+def test_list_assigned_incidents_returns_empty_list() -> None:
+    incident_repository = MagicMock(spec=IncidentRepository)
+    incident_history_repository = MagicMock(spec=IncidentHistoryRepository)
+    audit_repository = MagicMock(spec=AuditRepository)
+
+    expected_incidents = []
+
+    incident_repository.list_by_assignee.return_value = expected_incidents
+
+    service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+    )
+
+    result = service.list_assigned_incidents(assigned_to_id=2)
+    incident_repository.list_by_assignee.assert_called_once_with(assigned_to_id=2)
+
+    assert result is expected_incidents
+
