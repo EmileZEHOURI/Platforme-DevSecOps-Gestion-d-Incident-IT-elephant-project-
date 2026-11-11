@@ -57,3 +57,8 @@ class IncidentResponse(BaseModel):
 class IncidentAssignmentUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     assigned_to_id: int
+
+class IncidentPriorityUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    priority: IncidentPriority

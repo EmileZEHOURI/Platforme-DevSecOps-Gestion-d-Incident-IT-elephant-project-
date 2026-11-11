@@ -2,6 +2,7 @@ from app.models.enums import (
     AuditEventType,
     AuditResult,
     IncidentHistoryAction,
+    IncidentPriority,
     IncidentStatus,
     UserRole,
 )
@@ -81,7 +82,7 @@ class IncidentService:
         return self.incident_repository.list_by_creator(created_by_id=created_by_id)
 
     def list_all_incidents(
-            self,
+        self,
     ) -> list[Incident]:
 
         return self.incident_repository.get_all_incident()
@@ -171,6 +172,54 @@ class IncidentService:
 
         self.audit_repository.create(
             event_type=audit_event, result=AuditResult.SUCCESS, user_id=actor_id
+        )
+
+        return incident
+
+    def change_priority(
+        self,
+        *,
+        incident_id: int,
+        new_priority: IncidentPriority,
+        actor_id: int,
+    ) -> Incident:
+
+        incident = self.incident_repository.get_by_id(incident_id=incident_id)
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if actor.role is not UserRole.ADMIN:
+            raise NotEnoughAuthorization("Rôle d'admin nécessaire")
+
+        if incident is None:
+            raise IncidentNotFoundError("L'incident n'existe pas")
+
+        if incident.status is IncidentStatus.CLOSED:
+            raise IncidentStatusClosedError("L'incident est fermé")
+
+        if incident.priority == new_priority:
+            return incident
+
+        old_priority_value = incident.priority
+
+        incident.priority = new_priority
+
+        # Enregistrer l'action dans l'historique
+        self.incident_history_repository.create(
+            incident_id=incident.id,
+            actor_id=actor_id,
+            action=IncidentHistoryAction.PRIORITY_CHANGED,
+            field_name="priority",
+            old_value=(old_priority_value.value),
+            new_value=incident.priority.value,
+        )
+
+        self.audit_repository.create(
+            event_type=AuditEventType.INCIDENT_PRIORITY_CHANGED,
+            result=AuditResult.SUCCESS,
+            user_id=actor_id,
         )
 
         return incident

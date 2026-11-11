@@ -16,6 +16,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.incident import (
     IncidentAssignmentUpdate,
     IncidentCreate,
+    IncidentPriorityUpdate,
     IncidentResponse,
 )
 from app.schemas.incident_comment import CommentCreate, CommentResponse
@@ -95,6 +96,7 @@ def get_incident_list(
         incident_repository,
         incident_history_repository,
         AuditRepository(db),
+        UserRepository(db),
     )
 
     result = incident_service.list_user_incidents(created_by_id=current_user.id)
@@ -126,7 +128,7 @@ def get_all_incident(
         incident_repository,
         incident_history_repository,
         AuditRepository(db),
-        UserRepository(db)
+        UserRepository(db),
     )
 
     result = incident_service.list_all_incidents()
@@ -153,6 +155,7 @@ def get_assigned_incident_list(
         incident_repository,
         incident_history_repository,
         AuditRepository(db),
+        UserRepository(db),
     )
 
     if current_user.role not in (UserRole.ADMIN, UserRole.TECHNICIAN):
@@ -184,6 +187,7 @@ def get_incident_detail(
         incident_repository,
         incident_history_repository,
         AuditRepository(db),
+        UserRepository(db),
     )
 
     try:
@@ -315,6 +319,75 @@ def assign_incident(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Accès refusé, vous n'avez pas l'authorisation nécessaire",
+        ) from None
+
+    return response
+
+
+@router.patch(
+    "/{incident_id}/priority",
+    status_code=status.HTTP_200_OK,
+    response_model=IncidentResponse,
+)
+def update_incident_priority(
+    incident_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    data: IncidentPriorityUpdate,
+) -> IncidentResponse:
+
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+    audit_repository = AuditRepository(db)
+    user_repository = UserRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+        user_repository,
+    )
+
+    try:
+        updated_incident = incident_service.change_priority(
+            incident_id=incident_id,
+            new_priority=data.priority,
+            actor_id=current_user.id,
+        )
+
+        db.commit()
+        db.refresh(updated_incident)
+        response = IncidentResponse.model_validate(updated_incident)
+
+    except IncidentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="incident inexistant ou inaccessible",
+        ) from None
+
+    except IncidentStatusClosedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Impossible de modifier la priorité d'un incident fermé",
+        ) from None
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except NotEnoughAuthorization:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé, vous n'avez pas l'authorisation nécessaire",
+        ) from None
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la modification de priorité",
         ) from None
 
     return response

@@ -4,7 +4,7 @@ export const incidentCategories = {
 } as const;
 
 export const incidentPriorities = {
-  LOW: "Faible", MEDIUM: "Moyenne", HIGH: "Élevée", CRITICAL: "Critique",
+  LOW: "Faible", MEDIUM: "Modérée", HIGH: "Élevée", CRITICAL: "Critique",
 } as const;
 
 export type IncidentCategory = keyof typeof incidentCategories;

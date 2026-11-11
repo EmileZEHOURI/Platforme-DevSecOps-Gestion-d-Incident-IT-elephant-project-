@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button, StatePanel } from "@/components/ui";
-import { IncidentPriorityBadge, IncidentStatusBadge } from "@/components/incident-badges";
+import { IncidentEditDialog } from "@/components/incident-edit-dialog";
 import { ApiError } from "@/lib/api";
 import { assignIncident, listTechnicians } from "@/services/incident.service";
 import type { User } from "@/types/auth";
@@ -32,7 +32,7 @@ export function ownerLabel(id: number | null, admin: User, users: User[]) {
   return users.find(u => u.id === id)?.full_name || `Utilisateur n° ${id}`;
 }
 
-export function AdminError({ error, retry, directory = false }: { error: Error; retry?: () => void; directory?: boolean }) {
+export function AdminError({ error, retry, directory = false, descriptions }: { error: Error; retry?: () => void; directory?: boolean; descriptions?: Record<number, string> }) {
   const path = usePathname();
   const code = error instanceof ApiError ? error.status : 0;
   const messages: Record<number, string> = {
@@ -43,7 +43,7 @@ export function AdminError({ error, retry, directory = false }: { error: Error; 
     422: "Le choix du responsable est invalide. Vérifiez votre sélection.",
   };
   return <StatePanel error title={code === 401 ? "Session expirée" : code === 403 ? "Accès refusé" : directory ? "Annuaire indisponible" : "Opération impossible"}
-    description={directory && code !== 401 && code !== 403 ? "La liste des techniciens n’a pas pu être chargée." : messages[code] ?? "Le service est indisponible. Réessayez dans un instant."}>
+    description={directory && code !== 401 && code !== 403 ? "La liste des techniciens n’a pas pu être chargée." : descriptions?.[code] ?? messages[code] ?? "Le service est indisponible. Réessayez dans un instant."}>
     {code === 401 ? <Link className="button button-secondary" href={`/login?next=${encodeURIComponent(path)}`}>Se reconnecter</Link> : retry && <Button type="button" variant="secondary" onClick={retry}>Réessayer</Button>}
   </StatePanel>;
 }
@@ -58,12 +58,10 @@ export function AssignmentDialog({ incident, admin, directory, close, saved }: {
   incident: IncidentResponse; admin: User; directory: ReturnType<typeof useTechnicians>; close: () => void;
   saved: (updated: IncidentResponse) => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
   const locked = useRef(false);
   const [value, select] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close(); }, []);
   const target = Number(value);
   const eligible = !!value && (target === admin.id || directory.users.some(u => u.id === target));
   const unchanged = !!value && target === incident.assigned_to_id;
@@ -76,11 +74,7 @@ export function AssignmentDialog({ incident, admin, directory, close, saved }: {
     catch (e) { setError(e instanceof Error ? e : new Error()); }
     finally { locked.current = false; setPending(false); }
   }
-  return <dialog ref={dialog} className="assignment-dialog panel" aria-labelledby="assignment-title" onCancel={event => { event.preventDefault(); if (!locked.current) close(); }}>
-    <div className="panel-heading"><div><p className="eyebrow">{incident.reference}</p><h2 id="assignment-title">{incident.assigned_to_id === null ? "Assigner" : "Réassigner"} l’incident</h2></div></div>
-    <form className="incident-form incident-form-body" onSubmit={submit}>
-      <p><strong>{incident.title}</strong></p>
-      <p className="my-3 flex gap-2"><IncidentStatusBadge status={incident.status} /><IncidentPriorityBadge priority={incident.priority} /></p>
+  return <IncidentEditDialog incident={incident} title={incident.assigned_to_id === null ? "Assigner l’incident" : "Réassigner l’incident"} pending={pending} close={close} submit={submit}>
       <p className="muted mb-5">Responsable actuel : {ownerLabel(incident.assigned_to_id, admin, directory.users)}</p>
       {directory.loading && <p role="status">Chargement des techniciens…</p>}
       {directory.error && <AdminError directory error={directory.error} retry={pending ? undefined : directory.reload} />}
@@ -94,8 +88,7 @@ export function AssignmentDialog({ incident, admin, directory, close, saved }: {
       {error && <AdminError error={error} />}
       <div className="incident-actions"><Button type="submit" disabled={!eligible || unchanged || pending || denied || directory.loading}>{pending ? "Assignation en cours…" : "Confirmer"}</Button>
         <Button type="button" variant="secondary" disabled={pending} onClick={close}>Annuler</Button></div>
-    </form>
-  </dialog>;
+  </IncidentEditDialog>;
 }
 
 export function DetailAssignment({ incident, admin, saved }: { incident: IncidentResponse; admin: User; saved: (i: IncidentResponse) => void }) {

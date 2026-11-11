@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { PriorityDialog } from "@/components/priority-dialog";
 import { IncidentTable } from "@/components/incident-table";
 import { AdminError, AssignmentButton, AssignmentDialog, ownerLabel, useTechnicians } from "@/components/assignment-controls";
 import { Button, PageHeader, StatePanel } from "@/components/ui";
@@ -18,7 +19,7 @@ function Management({ admin }: { admin: User }) {
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
   const [ownership, setOwnership] = useState("");
-  const [editing, edit] = useState<IncidentResponse | null>(null);
+  const [editing, edit] = useState<{ kind: "priority" | "assignment"; incident: IncidentResponse } | null>(null);
   const [notice, notify] = useState("");
   useEffect(() => {
     let current = true;
@@ -35,7 +36,7 @@ function Management({ admin }: { admin: User }) {
   function reset() { search(""); setStatus(""); setPriority(""); setOwnership(""); }
   function saved(updated: IncidentResponse) {
     setItems(list => list?.map(i => i.id === updated.id ? updated : i) ?? null);
-    notify(`${updated.reference} : assignation enregistrée. Responsable : ${ownerLabel(updated.assigned_to_id, admin, directory.users)}.`);
+    notify(editing?.kind === "priority" ? `${updated.reference} : priorité modifiée — ${incidentPriorities[updated.priority]}.` : `${updated.reference} : assignation enregistrée. Responsable : ${ownerLabel(updated.assigned_to_id, admin, directory.users)}.`);
     edit(null);
   }
   return <>
@@ -55,11 +56,16 @@ function Management({ admin }: { admin: User }) {
           <p role="status" className="incident-list-summary">{visible.length} sur {items.length} · Du plus récent au plus ancien</p>
           {visible.length ? <IncidentTable incidents={visible} management={{
             owner: i => ownerLabel(i.assigned_to_id, admin, directory.users),
-            action: i => <AssignmentButton incident={i} open={() => edit(i)} />,
+            action: i => <div className="flex flex-col items-start gap-2">
+              <AssignmentButton incident={i} open={() => edit({ kind: "assignment", incident: i })} />
+              <Button variant="secondary" disabled={i.status === "CLOSED"} onClick={() => edit({ kind: "priority", incident: i })}>Modifier la priorité</Button>
+              {i.status === "CLOSED" && <small className="muted">La priorité d’un incident clos ne peut plus être modifiée.</small>}
+            </div>,
           }} /> : <StatePanel title="Aucun résultat" description="Modifiez votre recherche ou vos filtres."><Button variant="secondary" onClick={reset}>Effacer les filtres</Button></StatePanel>}
         </>}
     </section>
-    {editing && <AssignmentDialog admin={admin} incident={editing} directory={directory} close={() => edit(null)} saved={saved} />}
+    {editing?.kind === "priority" && <PriorityDialog incident={editing.incident} close={() => edit(null)} saved={saved} />}
+    {editing?.kind === "assignment" && <AssignmentDialog admin={admin} incident={editing.incident} directory={directory} close={() => edit(null)} saved={saved} />}
   </>;
 }
 
