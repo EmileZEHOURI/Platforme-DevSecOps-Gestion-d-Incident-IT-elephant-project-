@@ -1,27 +1,24 @@
 from unittest.mock import MagicMock
+
 import pytest
 
-
+from app.models.comment import IncidentComment
 from app.models.enums import (
     IncidentCategory,
+    IncidentHistoryAction,
     IncidentPriority,
     IncidentStatus,
-    IncidentHistoryAction,
 )
-
-
 from app.models.incident import Incident
-from app.models.comment import IncidentComment
-from app.schemas.incident_comment import CommentCreate
-
+from app.repositories.incident_comment_repository import IncidentCommentRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import (
     IncidentRepository,
 )
-from app.repositories.incident_comment_repository import IncidentCommentRepository
+from app.schemas.incident_comment import CommentCreate
 from app.services.incident_comment_service import (
-    IncidentCommentService,
     IncidentClosedError,
+    IncidentCommentService,
 )
 from app.services.incident_service import (
     IncidentNotFoundError,

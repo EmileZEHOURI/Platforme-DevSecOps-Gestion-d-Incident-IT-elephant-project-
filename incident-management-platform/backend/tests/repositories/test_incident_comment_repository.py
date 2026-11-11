@@ -9,9 +9,10 @@ from app.schemas.incident_comment import CommentCreate
 
 def create_comment_data() -> IncidentComment:
     return IncidentComment(
-        incident_id = 1,
-        author_id = 1,
+        incident_id=1,
+        author_id=1,
     )
+
 
 def test_creeate_incident_comment_repository() -> None:
     db = MagicMock(spec=Session)
@@ -23,7 +24,9 @@ def test_creeate_incident_comment_repository() -> None:
     )
 
     comment_entry = repository.create(
-        incident_id=comment_data.incident_id, author_id=comment_data.author_id, data=data
+        incident_id=comment_data.incident_id,
+        author_id=comment_data.author_id,
+        data=data,
     )
 
     assert comment_entry.incident_id == 1

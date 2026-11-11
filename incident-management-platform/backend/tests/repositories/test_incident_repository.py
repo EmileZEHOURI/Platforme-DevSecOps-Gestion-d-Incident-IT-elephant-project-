@@ -27,7 +27,7 @@ def create_incident_list() -> list[Incident]:
             priority=IncidentPriority.MEDIUM,
             status=IncidentStatus.OPEN,
             created_by_id=42,
-            assigned_to_id=1
+            assigned_to_id=1,
         )
         for number in range(1, 4)
     ]
@@ -129,6 +129,7 @@ def test_incident_is_assigned_to_technician() -> None:
 
     db.scalars.assert_called_once()
 
+
 def test_list_by_assignee_returns_empty_list_when_no_incident_is_assigned() -> None:
     db = MagicMock(spec=Session)
     repository = IncidentRepository(db)
@@ -141,9 +142,36 @@ def test_list_by_assignee_returns_empty_list_when_no_incident_is_assigned() -> N
     db.scalars.return_value.all.assert_called_once_with()
 
 
+def test_incident_found() -> None:
+    db = MagicMock(spec=Session)
+    repository = IncidentRepository(db)
+
+    expected_incident = Incident(
+        id=1,
+        title="Incident 1",
+        description="Incident de test",
+        category=IncidentCategory.ANOMALY,
+        priority=IncidentPriority.MEDIUM,
+        status=IncidentStatus.OPEN,
+        created_by_id=42,
+    )
+    db.execute.return_value.scalar_one_or_none.return_value = expected_incident
+
+    incident_find = repository.get_by_id(incident_id=expected_incident.id)
+
+    assert incident_find is expected_incident
+    db.execute.assert_called_once()
 
 
+def test_get_by_id_returns_none_when_incident_does_not_exist() -> None:
+    db = MagicMock(spec=Session)
+    repository = IncidentRepository(db)
 
+    expected_incident = None
 
+    db.execute.return_value.scalar_one_or_none.return_value = expected_incident
 
-    
+    incident_find = repository.get_by_id(incident_id=9999999)
+
+    assert incident_find is None
+    db.execute.assert_called_once()

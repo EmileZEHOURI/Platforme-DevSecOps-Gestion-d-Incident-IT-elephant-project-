@@ -126,13 +126,14 @@ def technician_user(db_session):
         email="technician@example.com",
         password_hash=hash_password("password"),
         full_name="Technician User",
-        role=UserRole.TECHNICIAN
+        role=UserRole.TECHNICIAN,
     )
 
     db_session.commit()
     db_session.refresh(user)
 
     yield user
+
 
 @pytest.fixture
 def other_technician_user(db_session):
@@ -141,13 +142,14 @@ def other_technician_user(db_session):
         email="other_technician@example.com",
         password_hash=hash_password("password"),
         full_name="Technician User",
-        role=UserRole.TECHNICIAN
+        role=UserRole.TECHNICIAN,
     )
 
     db_session.commit()
     db_session.refresh(user)
 
     yield user
+
 
 @pytest.fixture
 def admin_user(db_session):
@@ -156,7 +158,7 @@ def admin_user(db_session):
         email="admin@example.com",
         password_hash=hash_password("password"),
         full_name="Admin User",
-        role=UserRole.ADMIN
+        role=UserRole.ADMIN,
     )
 
     db_session.commit()

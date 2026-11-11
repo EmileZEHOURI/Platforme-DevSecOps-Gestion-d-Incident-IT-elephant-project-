@@ -92,3 +92,8 @@
 .comment-closed { color: var(--muted); background: #f1f4f6; padding: 12px; border-radius: 6px; margin-bottom: 18px; font-size: 13px; }
 @media(max-width:760px) { .incident-comments-body { padding: 20px; } }
 
+.assignment-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr)); gap:14px; padding:20px; }
+.assignment-filters .field { margin:0; }
+.assignment-dialog { margin:auto; width:min(480px,calc(100% - 32px)); max-height:90dvh; overflow:auto; color:var(--foreground); box-shadow:0 20px 75px #17293642; }
+.assignment-dialog::backdrop { background:#182a30a6; }
+.assignment-dialog p { overflow-wrap:anywhere; }

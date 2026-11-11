@@ -7,7 +7,7 @@ from app.api.dependencies import get_current_user
 from app.core.config import settings
 from app.core.database import get_db
 from app.models import User
-from app.models.enums import AuditEventType, AuditResult
+from app.models.enums import AuditEventType, AuditResult, UserRole
 from app.repositories import AuditRepository, UserRepository
 from app.schemas import LoginRequest, UserResponse
 from app.services import AuthenticationError, AuthService
@@ -116,3 +116,17 @@ def logout(
     response.delete_cookie(key="access_token", path="/")
 
     return {"message": "Déconnexion réussie "}
+
+
+@router.get("/technicians", response_model=list[UserResponse])
+def active_technician(
+    db: Annotated[Session, Depends(get_db)],
+) -> list[UserResponse]:
+
+    user_repository = UserRepository(db)
+
+    result = user_repository.list_active_technicians()
+
+    responses = [UserResponse.model_validate(user) for user in result]
+
+    return responses

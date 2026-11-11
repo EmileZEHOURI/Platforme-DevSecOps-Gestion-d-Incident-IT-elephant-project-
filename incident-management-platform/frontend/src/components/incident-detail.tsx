@@ -10,6 +10,8 @@ import { ApiError } from "@/lib/api";
 import { incidentCategories, type IncidentResponse } from "@/types/incident";
 import { IncidentComments } from "@/components/incident-comments";
 
+import { DetailAssignment } from "@/components/assignment-controls";
+
 type DetailState = { status: "loading" }
   | { status: "success"; incident: IncidentResponse }
   | { status: "error"; code?: number; message: string };
@@ -20,6 +22,7 @@ function IncidentDate({ value, fallback }: { value: string | null; fallback: str
 }
 
 function DetailContent({ id }: { id: string }) {
+  const { user } = useAuth();
   const [state, setState] = useState<DetailState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -69,6 +72,7 @@ function DetailContent({ id }: { id: string }) {
         <IncidentComments key={incident.id} incident={incident} />
       </div>
       <div className="incident-detail-side">
+        {user?.role === "ADMIN" && <DetailAssignment incident={incident} admin={user} saved={updated => setState({status:"success", incident:updated})} />}
         <section className="panel" aria-labelledby="information-heading">
           <div className="panel-heading"><h2 id="information-heading">Informations</h2></div>
           <dl className="incident-detail-facts">

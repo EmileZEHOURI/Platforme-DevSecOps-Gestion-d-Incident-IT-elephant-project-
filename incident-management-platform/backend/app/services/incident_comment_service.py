@@ -2,13 +2,11 @@
 from typing import TYPE_CHECKING
 
 from app.models.comment import IncidentComment
-from app.models.enums import IncidentStatus
-from app.models.enums import IncidentHistoryAction
-from app.repositories.incident_repository import IncidentRepository
-
-from app.services.incident_service import IncidentNotFoundError
-from app.repositories.incident_history_repository import IncidentHistoryRepository
+from app.models.enums import IncidentHistoryAction, IncidentStatus
 from app.repositories.incident_comment_repository import IncidentCommentRepository
+from app.repositories.incident_history_repository import IncidentHistoryRepository
+from app.repositories.incident_repository import IncidentRepository
+from app.services.incident_service import IncidentNotFoundError
 
 if TYPE_CHECKING:
     from app.schemas.incident_comment import CommentCreate

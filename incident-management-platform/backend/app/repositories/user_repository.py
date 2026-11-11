@@ -25,6 +25,18 @@ class UserRepository:
 
         return self.db.scalar(statement)
 
+    def list_active_technicians(self) -> list[User]:
+        statement = (
+            select(User)
+            .where(
+                User.role == UserRole.TECHNICIAN,
+                User.is_active.is_(True),
+            )
+            .order_by(User.full_name.asc())
+        )
+
+        return list(self.db.scalars(statement).all())
+
     def create(
         self,
         *,

@@ -25,6 +25,13 @@ class IncidentRepository:
 
         return incident
 
+    def get_all_incident(self) -> list[Incident]:
+        statement = (
+            select(Incident)
+        )
+
+        return self.db.scalars(statement).all()
+
     def list_by_creator(self, *, created_by_id: int) -> list[Incident]:
         statement = (
             select(Incident)
@@ -45,6 +52,15 @@ class IncidentRepository:
             .where(Incident.id == incident_id)
             .where(Incident.created_by_id == created_by_id)
         )
+
+        return self.db.execute(statement).scalar_one_or_none()
+
+    def get_by_id(
+        self,
+        *,
+        incident_id: int,
+    ) -> Incident | None:
+        statement = select(Incident).where(Incident.id == incident_id)
 
         return self.db.execute(statement).scalar_one_or_none()
 

@@ -52,3 +52,8 @@ class IncidentResponse(BaseModel):
     updated_at: datetime
     resolved_at: datetime | None
     closed_at: datetime | None
+
+
+class IncidentAssignmentUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    assigned_to_id: int

@@ -12,6 +12,7 @@ from app.models.enums import (
 from app.models.incident import Incident
 from app.models.user import User
 
+
 def test_incident_comment_creation_lifecycle(test_user: User) -> None:
     incident_payload = {
         "title": "Incident utilisateur A - 1",
@@ -58,7 +59,7 @@ def test_incident_comment_creation_lifecycle(test_user: User) -> None:
         assert body["author_id"] == test_user.id
         assert body["content"] == comment_payload["content"]
         assert body["created_at"] is not None
-        
+
 
 def test_comment_other_user_incident_returns_404(
     test_user: User,
@@ -116,8 +117,7 @@ def test_comment_other_user_incident_returns_404(
 
         assert comment_response.status_code == 404
         assert (
-            comment_response.json()["detail"]
-            == "incident inexistant ou inaccessible"
+            comment_response.json()["detail"] == "incident inexistant ou inaccessible"
         )
 
 

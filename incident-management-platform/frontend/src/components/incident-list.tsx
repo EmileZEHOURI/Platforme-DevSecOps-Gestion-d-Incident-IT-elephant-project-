@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { Button, StatePanel } from "@/components/ui";
-import { IncidentPriorityBadge, IncidentStatusBadge } from "@/components/incident-badges";
+import { IncidentTable } from "@/components/incident-table";
 import { ApiError } from "@/lib/api";
 import { canViewAssignedIncidents } from "@/lib/permissions";
 import { listIncidents, listAssignedIncidents } from "@/services/incident.service";
-import { incidentCategories, type IncidentResponse } from "@/types/incident";
+import type { IncidentResponse } from "@/types/incident";
 
 type IncidentScope = "created" | "assigned";
 
@@ -16,29 +16,6 @@ type ListState =
   | { status: "loading" }
   | { status: "success"; incidents: IncidentResponse[] }
   | { status: "error"; message: string; code?: number };
-
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
-
-function IncidentTable({ incidents }: { incidents: IncidentResponse[] }) {
-  return (
-    <div className="incident-table-scroll" role="region" aria-label="Liste des incidents, défilement horizontal disponible" tabIndex={0}>
-      <table className="incident-table">
-        <caption className="sr-only">Vos incidents, dans l’ordre renvoyé par le service</caption>
-        <thead><tr><th scope="col">Référence</th><th scope="col">Titre</th><th scope="col">Catégorie</th><th scope="col">Priorité</th><th scope="col">Statut</th><th scope="col">Créé le</th></tr></thead>
-        <tbody>{incidents.map(incident => (
-          <tr key={incident.id}>
-            <th scope="row" className="incident-reference"><Link className="incident-detail-link" href={`/dashboard/incidents/${incident.id}`} aria-label={`Voir le détail de ${incident.reference}`}>{incident.reference}</Link></th>
-            <td className="incident-list-title">{incident.title}</td>
-            <td>{incidentCategories[incident.category]}</td>
-            <td><IncidentPriorityBadge priority={incident.priority} /></td>
-            <td><IncidentStatusBadge status={incident.status} /></td>
-            <td className="incident-list-date"><time dateTime={incident.created_at}>{dateFormat.format(new Date(incident.created_at))}</time></td>
-          </tr>
-        ))}</tbody>
-      </table>
-    </div>
-  );
-}
 
 function UserIncidentList({ scope }: { scope: IncidentScope }) {
   const assigned = scope === "assigned";

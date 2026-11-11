@@ -397,15 +397,11 @@ def test_user_get_incident_assigned_forbidden(
         assert response.status_code == 403
 
 
-
-def test_technician_without_assigned_incident(technician_user: User
-) -> None:
-
+def test_technician_without_assigned_incident(technician_user: User) -> None:
 
     with (
         TestClient(app, client=("127.0.0.1", 50000)) as technician_1,
     ):
-    
         # Connexion technicien A
 
         login_response_2 = technician_1.post(
@@ -417,7 +413,6 @@ def test_technician_without_assigned_incident(technician_user: User
         )
         assert login_response_2.status_code == 200
 
-
         incident_technician_1_list = technician_1.get(
             "/incidents/assigned",
         )
@@ -426,3 +421,5 @@ def test_technician_without_assigned_incident(technician_user: User
         body_list = incident_technician_1_list.json()
 
         assert len(body_list) == 0
+
+

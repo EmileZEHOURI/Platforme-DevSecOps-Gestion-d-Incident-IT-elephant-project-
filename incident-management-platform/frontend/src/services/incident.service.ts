@@ -1,3 +1,4 @@
+import type { User } from "@/types/auth";
 import { api } from "@/lib/api";
 import type { IncidentCreate, IncidentResponse } from "@/types/incident";
 
@@ -32,5 +33,12 @@ export function listAssignedIncidents(signal?: AbortSignal): Promise<IncidentRes
   return api<IncidentResponse[]>("/incidents/assigned", {
     method: "GET",
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12000)]) : undefined,
+  });
+}
+export const listAllIncidents = () => api<IncidentResponse[]>("/incidents/all");
+export const listTechnicians = () => api<User[]>("/users/technicians");
+export function assignIncident(id: number, target: number) {
+  return api<IncidentResponse>(`/incidents/${id}/assignment`, {
+    method: "PATCH", body: JSON.stringify({ assigned_to_id: target }),
   });
 }

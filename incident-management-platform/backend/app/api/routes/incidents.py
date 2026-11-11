@@ -6,19 +6,32 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
-from app.models.user import User
 from app.models.enums import UserRole
+from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
-from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_comment_repository import IncidentCommentRepository
+from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
+from app.repositories.user_repository import UserRepository
+from app.schemas.incident import (
+    IncidentAssignmentUpdate,
+    IncidentCreate,
+    IncidentResponse,
+)
 from app.schemas.incident_comment import CommentCreate, CommentResponse
-from app.schemas.incident import IncidentCreate, IncidentResponse
 from app.services.incident_comment_service import (
     IncidentClosedError,
     IncidentCommentService,
 )
-from app.services.incident_service import IncidentNotFoundError, IncidentService
+from app.services.incident_service import (
+    IncidentNotFoundError,
+    IncidentService,
+    IncidentStatusClosedError,
+    InvalidAssignmentTargetError,
+    NotEnoughAuthorization,
+    UserInactiveError,
+    UserNotFoundError,
+)
 
 router = APIRouter(
     prefix="/incidents",
@@ -44,6 +57,7 @@ def create_incident(
         incident_repository,
         incident_history_repository,
         AuditRepository(db),
+        UserRepository(db),
     )
 
     try:
@@ -84,6 +98,38 @@ def get_incident_list(
     )
 
     result = incident_service.list_user_incidents(created_by_id=current_user.id)
+
+    responses = [IncidentResponse.model_validate(incident) for incident in result]
+
+    return responses
+
+
+@router.get(
+    "/all",
+    status_code=status.HTTP_200_OK,
+    response_model=list[IncidentResponse],
+)
+def get_all_incident(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> list[IncidentResponse]:
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès réservé aux administrateurs",
+        )
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        AuditRepository(db),
+        UserRepository(db)
+    )
+
+    result = incident_service.list_all_incidents()
 
     responses = [IncidentResponse.model_validate(incident) for incident in result]
 
@@ -148,7 +194,6 @@ def get_incident_detail(
         response = IncidentResponse.model_validate(result)
 
     except IncidentNotFoundError:
-
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Échec du chargement des détails de l'incident",
@@ -196,6 +241,80 @@ def create_incident_comment(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Impossible d’ajouter un commentaire à un incident fermé",
+        ) from None
+
+    return response
+
+
+@router.patch(
+    "/{incident_id}/assignment",
+    status_code=status.HTTP_200_OK,
+    response_model=IncidentResponse,
+)
+def assign_incident(
+    incident_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    data: IncidentAssignmentUpdate,
+) -> IncidentResponse:
+
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+    audit_repository = AuditRepository(db)
+    user_repository = UserRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+        user_repository,
+    )
+
+    try:
+        updated_incident = incident_service.assign_incident(
+            incident_id=incident_id,
+            assigned_to_id=data.assigned_to_id,
+            actor_id=current_user.id,
+        )
+
+        db.commit()
+        db.refresh(updated_incident)
+        response = IncidentResponse.model_validate(updated_incident)
+
+    except IncidentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="incident inexistant ou inaccessible",
+        ) from None
+
+    except IncidentStatusClosedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Impossible d’assigner un incident fermé",
+        ) from None
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except NotEnoughAuthorization:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé, vous n'avez pas l'authorisation nécessaire",
+        ) from None
+
+    except UserInactiveError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Impossible d’assigner un incident à un utiliseur inactif",
+        ) from None
+
+    except InvalidAssignmentTargetError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé, vous n'avez pas l'authorisation nécessaire",
         ) from None
 
     return response
