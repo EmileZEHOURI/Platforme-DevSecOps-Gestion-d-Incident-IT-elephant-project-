@@ -49,3 +49,9 @@ export function updateIncidentPriority(id: number, priority: IncidentPriority) {
     body: JSON.stringify({ priority }),
   });
 }
+
+export function startIncident(id: number): Promise<IncidentResponse> {
+  return api<IncidentResponse>(`/incidents/${id}/status`, {
+    method: "PATCH", body: JSON.stringify({ status: "IN_PROGRESS" }),
+  });
+}

@@ -38,6 +38,18 @@ class InvalidAssignmentTargetError(Exception):
     """Interdit"""
 
 
+class IncidentWithoutAssignmentError(Exception):
+    """Incident Without Assignment"""
+
+
+class IncidentStatusResolvedError(Exception):
+    """Incident Resolved"""
+
+
+class InvalidStatusTransitionError(Exception):
+    """Incident Status Transition Invalid"""
+
+
 class IncidentService:
     def __init__(
         self,
@@ -218,6 +230,71 @@ class IncidentService:
 
         self.audit_repository.create(
             event_type=AuditEventType.INCIDENT_PRIORITY_CHANGED,
+            result=AuditResult.SUCCESS,
+            user_id=actor_id,
+        )
+
+        return incident
+
+    def change_status(
+        self,
+        *,
+        incident_id: int,
+        new_status: IncidentStatus,
+        actor_id: int,
+    ) -> Incident:
+
+        incident = self.incident_repository.get_by_id(incident_id=incident_id)
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if actor.role is not UserRole.ADMIN and actor.role is not UserRole.TECHNICIAN:
+            raise NotEnoughAuthorization("Rôle d'admin ou technicien nécessaire")
+
+        if incident is None:
+            raise IncidentNotFoundError("L'incident n'existe pas")
+
+        if incident.status is IncidentStatus.RESOLVED:
+            raise IncidentStatusResolvedError("L'incident est déjà résolue")
+
+        if incident.assigned_to_id is None:
+            raise IncidentWithoutAssignmentError("L'incident n'est pas assigné")
+
+        if incident.assigned_to_id != actor.id:
+            raise NotEnoughAuthorization("Vous n'êtes pas responsable de cet incident")
+
+        if incident.status is IncidentStatus.CLOSED:
+            raise IncidentStatusClosedError("L'incident est fermé")
+
+        if (
+            incident.status == IncidentStatus.IN_PROGRESS
+            and new_status == IncidentStatus.IN_PROGRESS
+        ):
+            return incident
+        if (
+            incident.status != IncidentStatus.OPEN
+            or new_status != IncidentStatus.IN_PROGRESS
+        ):
+            raise InvalidStatusTransitionError("Transition du status invalide")
+
+        old_status_value = incident.status
+
+        incident.status = new_status
+
+        # Enregistrer l'action dans l'historique
+        self.incident_history_repository.create(
+            incident_id=incident.id,
+            actor_id=actor_id,
+            action=IncidentHistoryAction.STATUS_CHANGED,
+            field_name="status",
+            old_value=(old_status_value.value),
+            new_value=new_status.value,
+        )
+
+        self.audit_repository.create(
+            event_type=AuditEventType.INCIDENT_STATUS_CHANGED,
             result=AuditResult.SUCCESS,
             user_id=actor_id,
         )

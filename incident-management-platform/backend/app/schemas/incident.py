@@ -62,3 +62,8 @@ class IncidentPriorityUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     priority: IncidentPriority
+
+class IncidentStatusUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: IncidentStatus

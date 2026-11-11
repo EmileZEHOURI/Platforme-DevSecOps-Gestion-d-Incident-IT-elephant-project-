@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIncidentStart } from "@/components/incident-start";
 import { useAuth } from "@/components/auth-provider";
 import { PriorityDialog } from "@/components/priority-dialog";
 import { IncidentTable } from "@/components/incident-table";
@@ -27,6 +28,10 @@ function Management({ admin }: { admin: User }) {
     return () => { current = false; };
   }, [attempt]);
   function reload() { setError(null); setItems(null); setAttempt(n => n + 1); directory.reload(); }
+  const start = useIncidentStart(updated => {
+    setItems(list => list?.map(i => i.id === updated.id ? updated : i) ?? null);
+    notify("");
+  }, () => setAttempt(n => n + 1));
   const keyword = query.trim().toLocaleLowerCase("fr");
   const visible = (items ?? []).filter(i =>
     (!keyword || [i.title, i.reference].some(v => v.toLocaleLowerCase("fr").includes(keyword))) &&
@@ -41,6 +46,7 @@ function Management({ admin }: { admin: User }) {
   }
   return <>
     <PageHeader eyebrow="ADMINISTRATION" title="Gestion des incidents" description="Consultez les signalements de la plateforme et répartissez leur prise en charge." />
+    {start.feedback}
     {notice && <p role="status" className="comment-confirmation">{notice}</p>}
     <section className="panel"><div className="panel-heading"><h2>Tous les incidents</h2>
       <Button variant="ghost" disabled={!items && !error} onClick={reload}>Actualiser ↻</Button></div>
@@ -57,6 +63,7 @@ function Management({ admin }: { admin: User }) {
           {visible.length ? <IncidentTable incidents={visible} management={{
             owner: i => ownerLabel(i.assigned_to_id, admin, directory.users),
             action: i => <div className="flex flex-col items-start gap-2">
+              {start.action(i)}
               <AssignmentButton incident={i} open={() => edit({ kind: "assignment", incident: i })} />
               <Button variant="secondary" disabled={i.status === "CLOSED"} onClick={() => edit({ kind: "priority", incident: i })}>Modifier la priorité</Button>
               {i.status === "CLOSED" && <small className="muted">La priorité d’un incident clos ne peut plus être modifiée.</small>}

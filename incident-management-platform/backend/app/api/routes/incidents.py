@@ -18,6 +18,7 @@ from app.schemas.incident import (
     IncidentCreate,
     IncidentPriorityUpdate,
     IncidentResponse,
+    IncidentStatusUpdate,
 )
 from app.schemas.incident_comment import CommentCreate, CommentResponse
 from app.services.incident_comment_service import (
@@ -28,7 +29,10 @@ from app.services.incident_service import (
     IncidentNotFoundError,
     IncidentService,
     IncidentStatusClosedError,
+    IncidentStatusResolvedError,
+    IncidentWithoutAssignmentError,
     InvalidAssignmentTargetError,
+    InvalidStatusTransitionError,
     NotEnoughAuthorization,
     UserInactiveError,
     UserNotFoundError,
@@ -388,6 +392,93 @@ def update_incident_priority(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur lors de la modification de priorité",
+        ) from None
+
+    return response
+
+
+@router.patch(
+    "/{incident_id}/status",
+    status_code=status.HTTP_200_OK,
+    response_model=IncidentResponse,
+)
+def update_incident_status(
+    incident_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    data: IncidentStatusUpdate,
+) -> IncidentResponse:
+
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+    audit_repository = AuditRepository(db)
+    user_repository = UserRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+        user_repository,
+    )
+
+    try:
+        updated_incident = incident_service.change_status(
+            incident_id=incident_id,
+            new_status=data.status,
+            actor_id=current_user.id,
+        )
+
+        db.commit()
+        db.refresh(updated_incident)
+        response = IncidentResponse.model_validate(updated_incident)
+
+    except NotEnoughAuthorization:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé, vous n'avez pas l'autorisation nécessaire",
+        ) from None
+
+    except IncidentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="incident inexistant ou inaccessible",
+        ) from None
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except IncidentWithoutAssignmentError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="L'incident n'a pas de responsable",
+        ) from None
+
+    except IncidentStatusClosedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Impossible de modifier le statue d'un incident fermé",
+        ) from None
+
+    except IncidentStatusResolvedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Impossible de modifier le statue d'un incident résolu",
+        ) from None
+
+    except InvalidStatusTransitionError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Transition de statut non autorisé",
+        ) from None
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la modification de status",
         ) from None
 
     return response

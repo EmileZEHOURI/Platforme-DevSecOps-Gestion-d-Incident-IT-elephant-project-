@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useIncidentStart } from "@/components/incident-start";
 import { useAuth } from "@/components/auth-provider";
 import { Button, StatePanel } from "@/components/ui";
 import { IncidentTable } from "@/components/incident-table";
@@ -40,8 +41,12 @@ function UserIncidentList({ scope }: { scope: IncidentScope }) {
 
   function reload() { setState({ status: "loading" }); setAttempt(value => value + 1); }
 
+  const start = useIncidentStart(updated => {
+    setState(current => current.status === "success" ? { ...current, incidents: current.incidents.map(i => i.id === updated.id ? updated : i) } : current);
+  }, reload);
   return (
     <section className="panel" aria-labelledby="incident-list-heading" aria-busy={state.status === "loading"}>
+      {start.feedback}
       <div className="panel-heading">
         <h2 id="incident-list-heading">{assigned ? "Mes incidents assignés" : "Mes incidents"}</h2>
         <Button variant="ghost" disabled={state.status === "loading"} onClick={reload}>Actualiser ↻</Button>
@@ -60,7 +65,7 @@ function UserIncidentList({ scope }: { scope: IncidentScope }) {
         </StatePanel>
         : <>
           <p className="incident-list-summary" role="status">{state.incidents.length} incident{state.incidents.length > 1 ? "s" : ""} · {assigned ? "Dans votre file de travail" : "Du plus récent au plus ancien"}</p>
-          <IncidentTable incidents={state.incidents} />
+          <IncidentTable incidents={state.incidents} action={assigned ? start.action : undefined} />
         </>)}
     </section>
   );
