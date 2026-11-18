@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app.models.enums import (
     AuditEventType,
     AuditResult,
@@ -44,6 +46,10 @@ class IncidentWithoutAssignmentError(Exception):
 
 class IncidentStatusResolvedError(Exception):
     """Incident Resolved"""
+
+
+class IncidentResolutionIsEmpty(Exception):
+    """Incident Resolution Is Empty"""
 
 
 class InvalidStatusTransitionError(Exception):
@@ -295,6 +301,72 @@ class IncidentService:
 
         self.audit_repository.create(
             event_type=AuditEventType.INCIDENT_STATUS_CHANGED,
+            result=AuditResult.SUCCESS,
+            user_id=actor_id,
+        )
+
+        return incident
+
+    def resolve_incident(
+        self,
+        *,
+        incident_id: int,
+        resolution: str,
+        actor_id: int,
+    ) -> Incident:
+        incident = self.incident_repository.get_by_id(incident_id=incident_id)
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if actor.role not in (UserRole.TECHNICIAN, UserRole.ADMIN):
+            raise NotEnoughAuthorization(
+                "Rôle de technicien ou administrateur nécessaire"
+            )
+
+        if incident is None:
+            raise IncidentNotFoundError("L'incident n'existe pas")
+
+        if incident.assigned_to_id is None:
+            raise IncidentWithoutAssignmentError("L'incident n'est pas assigné")
+
+        if incident.status is IncidentStatus.RESOLVED:
+            raise IncidentStatusResolvedError("L'incident est déjà résolue")
+
+        if incident.status is IncidentStatus.CLOSED:
+            raise IncidentStatusClosedError("L'incident est fermé")
+
+        if incident.assigned_to_id != actor.id:
+            raise NotEnoughAuthorization("Vous n'êtes pas responsable de cet incident")
+
+        if incident.status is not IncidentStatus.IN_PROGRESS:
+            raise InvalidStatusTransitionError(
+                "L'incident ne peux transitionner qu'à partir d'IN_PROGRESS"
+            )
+
+        resolution_validate = resolution.strip()
+
+        if not resolution_validate:
+            raise IncidentResolutionIsEmpty("la description est vide")
+
+        old_status = incident.status
+
+        incident.status = IncidentStatus.RESOLVED
+        incident.resolution = resolution_validate
+        incident.resolved_at = datetime.now(timezone.utc)
+
+        self.incident_history_repository.create(
+            incident_id=incident.id,
+            actor_id=actor_id,
+            action=IncidentHistoryAction.RESOLVED,
+            field_name="status",
+            old_value=old_status.value,
+            new_value="RESOLVED",
+        )
+
+        self.audit_repository.create(
+            event_type=AuditEventType.INCIDENT_RESOLVED,
             result=AuditResult.SUCCESS,
             user_id=actor_id,
         )

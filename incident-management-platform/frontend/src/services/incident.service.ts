@@ -55,3 +55,9 @@ export function startIncident(id: number): Promise<IncidentResponse> {
     method: "PATCH", body: JSON.stringify({ status: "IN_PROGRESS" }),
   });
 }
+
+export function resolveIncident(id: number, resolution: string): Promise<IncidentResponse> {
+  return api<IncidentResponse>(`/incidents/${id}/resolve`, {
+    method: "PATCH", body: JSON.stringify({ resolution: resolution.trim() }),
+  });
+}

@@ -14,7 +14,12 @@ export function IncidentTable({ incidents, management, action }: { action?: (inc
         <tbody>{incidents.map(incident => (
           <tr key={incident.id}>
             <th scope="row" className="incident-reference">{management ? incident.reference : <Link className="incident-detail-link" href={`/dashboard/incidents/${incident.id}`} aria-label={`Voir le détail de ${incident.reference}`}>{incident.reference}</Link>}</th>
-            <td className="incident-list-title">{incident.title}</td>
+            <td className="incident-list-title">{incident.title}
+              {incident.resolution && <details className="mt-3"><summary className="incident-detail-link cursor-pointer">Consulter la résolution</summary>
+                <p className="whitespace-pre-wrap break-words mt-2">{incident.resolution}</p>
+                {incident.resolved_at && <p className="muted mt-2">Résolu le <time dateTime={incident.resolved_at}>{dateFormat.format(new Date(incident.resolved_at))}</time></p>}
+              </details>}
+            </td>
             <td>{incidentCategories[incident.category]}</td>
             <td><IncidentPriorityBadge priority={incident.priority} /></td>
             <td><IncidentStatusBadge status={incident.status} /></td>

@@ -9,3 +9,7 @@ export function canViewAssignedIncidents(role: User["role"]): boolean {
 export function canStartIncident(user: User | null, incident: IncidentResponse): boolean {
   return !!user && canViewAssignedIncidents(user.role) && incident.assigned_to_id === user.id && incident.status === "OPEN";
 }
+
+export function canResolveIncident(user: User | null, incident: IncidentResponse): boolean {
+  return !!user && canViewAssignedIncidents(user.role) && incident.assigned_to_id === user.id && incident.status === "IN_PROGRESS";
+}

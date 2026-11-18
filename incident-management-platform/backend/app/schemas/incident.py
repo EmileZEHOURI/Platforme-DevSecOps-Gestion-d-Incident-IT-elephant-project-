@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus
 
@@ -67,3 +68,14 @@ class IncidentStatusUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     status: IncidentStatus
+
+class IncidentResolveRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    resolution: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=1,
+        ),
+    ]

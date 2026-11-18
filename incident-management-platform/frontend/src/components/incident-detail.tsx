@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useIncidentResolve } from "@/components/incident-resolve";
 import { useIncidentStart } from "@/components/incident-start";
 import { useAuth } from "@/components/auth-provider";
 import { Button, PageHeader, StatePanel } from "@/components/ui";
@@ -39,6 +40,7 @@ function DetailContent({ id }: { id: string }) {
   }, [id, attempt]);
 
   const start = useIncidentStart(updated => setState({ status: "success", incident: updated }), () => setAttempt(n => n + 1));
+  const resolve = useIncidentResolve(updated => setState({ status: "success", incident: updated }), () => setAttempt(n => n + 1));
   if (state.status === "loading") return <>
     <PageHeader title="Détail de l’incident" description="Retrouvez les informations de votre signalement." />
     <section className="panel incident-list-loading" role="status" aria-busy="true"><span className="spinner" aria-hidden="true" />Chargement de l’incident…</section>
@@ -49,6 +51,7 @@ function DetailContent({ id }: { id: string }) {
     return <>
       <PageHeader title="Détail de l’incident" description="Retrouvez les informations de votre signalement." />
       {start.feedback}
+    {resolve.feedback}
       <section className="panel"><StatePanel error
         title={notFound ? "Incident introuvable ou inaccessible" : state.code === 401 ? "Session expirée" : state.code === 403 ? "Accès refusé" : "Impossible de charger l’incident"}
         description={notFound ? "Cet incident n’est pas disponible. Revenez à votre liste pour consulter vos signalements." : state.message}>
@@ -63,6 +66,7 @@ function DetailContent({ id }: { id: string }) {
   return <>
     <PageHeader eyebrow={incident.reference} title={incident.title} description="Détail de votre signalement" action={<IncidentStatusBadge status={incident.status} />} />
     {start.feedback}
+    {resolve.feedback}
     <div className="incident-detail-grid">
       <div className="incident-detail-main">
         <section className="panel" aria-labelledby="description-heading">
@@ -78,7 +82,7 @@ function DetailContent({ id }: { id: string }) {
       <div className="incident-detail-side">
         {user?.role === "ADMIN" && <DetailAssignment incident={incident} admin={user} saved={updated => setState({status:"success", incident:updated})} />}
         <section className="panel" aria-labelledby="information-heading">
-          <div className="panel-heading"><h2 id="information-heading">Informations</h2>{start.action(incident)}</div>
+          <div className="panel-heading"><h2 id="information-heading">Informations</h2>{start.action(incident)}{resolve.action(incident)}</div>
           <dl className="incident-detail-facts">
             <div><dt>Référence</dt><dd className="incident-reference">{incident.reference}</dd></div>
             <div><dt>Catégorie</dt><dd>{incidentCategories[incident.category]}</dd></div>
@@ -103,5 +107,5 @@ function DetailContent({ id }: { id: string }) {
 
 export function IncidentDetail({ id }: { id: string }) {
   const { user } = useAuth();
-  return user ? <DetailContent key={`${user.id}:${id}`} id={id} /> : null;
+  return user ? <DetailContent key={`${user.id}:${user.role}:${id}`} id={id} /> : null;
 }

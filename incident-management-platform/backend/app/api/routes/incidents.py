@@ -17,6 +17,7 @@ from app.schemas.incident import (
     IncidentAssignmentUpdate,
     IncidentCreate,
     IncidentPriorityUpdate,
+    IncidentResolveRequest,
     IncidentResponse,
     IncidentStatusUpdate,
 )
@@ -27,6 +28,7 @@ from app.services.incident_comment_service import (
 )
 from app.services.incident_service import (
     IncidentNotFoundError,
+    IncidentResolutionIsEmpty,
     IncidentService,
     IncidentStatusClosedError,
     IncidentStatusResolvedError,
@@ -479,6 +481,99 @@ def update_incident_status(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur lors de la modification de status",
+        ) from None
+
+    return response
+
+@router.patch(
+    "/{incident_id}/resolve",
+    status_code=status.HTTP_200_OK,
+    response_model=IncidentResponse,
+)
+def resolve_incident_route(
+    incident_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    data: IncidentResolveRequest,
+) -> IncidentResponse:
+
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+    audit_repository = AuditRepository(db)
+    user_repository = UserRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+        user_repository,
+    )
+
+    try:
+        updated_resolved_incident = incident_service.resolve_incident(
+            incident_id=incident_id,
+            resolution=data.resolution,
+            actor_id=current_user.id,
+        )
+
+        db.commit()
+        db.refresh(updated_resolved_incident)
+        response = IncidentResponse.model_validate(updated_resolved_incident)
+
+
+    except NotEnoughAuthorization:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé, vous n'avez pas l'autorisation nécessaire",
+        ) from None
+
+    except IncidentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="incident inexistant ou inaccessible",
+        ) from None
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except IncidentWithoutAssignmentError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="L'incident n'a pas de responsable",
+        ) from None
+
+    except IncidentStatusClosedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Impossible de résoudre un incident fermé",
+        ) from None
+
+    except IncidentStatusResolvedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cet incident a déjà été résolu",
+        ) from None
+
+    except InvalidStatusTransitionError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Seul un incident en cours de traitement peut être résolu",
+        ) from None
+
+    except IncidentResolutionIsEmpty:
+        raise HTTPException(
+            status_code= status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Le contenu ne doit pas être vide",
+        ) from None
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la résolution de l'incident",
         ) from None
 
     return response
