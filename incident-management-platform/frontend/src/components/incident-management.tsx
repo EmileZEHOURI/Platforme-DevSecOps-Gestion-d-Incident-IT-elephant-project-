@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIncidentClose } from "@/components/incident-close";
 import { useIncidentResolve } from "@/components/incident-resolve";
 import { useIncidentStart } from "@/components/incident-start";
 import { useAuth } from "@/components/auth-provider";
@@ -37,6 +38,10 @@ function Management({ admin }: { admin: User }) {
     setItems(list => list?.map(i => i.id === updated.id ? updated : i) ?? null);
     notify("");
   }, reload);
+  const close = useIncidentClose(updated => {
+    setItems(list => list?.map(i => i.id === updated.id ? updated : i) ?? null);
+    notify("");
+  }, () => setAttempt(n => n + 1));
   const keyword = query.trim().toLocaleLowerCase("fr");
   const visible = (items ?? []).filter(i =>
     (!keyword || [i.title, i.reference].some(v => v.toLocaleLowerCase("fr").includes(keyword))) &&
@@ -53,6 +58,7 @@ function Management({ admin }: { admin: User }) {
     <PageHeader eyebrow="ADMINISTRATION" title="Gestion des incidents" description="Consultez les signalements de la plateforme et répartissez leur prise en charge." />
     {start.feedback}
     {resolve.feedback}
+    {close.feedback}
     {notice && <p role="status" className="comment-confirmation">{notice}</p>}
     <section className="panel"><div className="panel-heading"><h2>Tous les incidents</h2>
       <Button variant="ghost" disabled={!items && !error} onClick={reload}>Actualiser ↻</Button></div>
@@ -71,6 +77,7 @@ function Management({ admin }: { admin: User }) {
             action: i => <div className="flex flex-col items-start gap-2">
               {start.action(i)}
               {resolve.action(i)}
+              {close.action(i)}
               <AssignmentButton incident={i} open={() => edit({ kind: "assignment", incident: i })} />
               <Button variant="secondary" disabled={i.status === "CLOSED"} onClick={() => edit({ kind: "priority", incident: i })}>Modifier la priorité</Button>
               {i.status === "CLOSED" && <small className="muted">La priorité d’un incident clos ne peut plus être modifiée.</small>}

@@ -61,3 +61,7 @@ export function resolveIncident(id: number, resolution: string): Promise<Inciden
     method: "PATCH", body: JSON.stringify({ resolution: resolution.trim() }),
   });
 }
+
+export function closeIncident(id: number): Promise<IncidentResponse> {
+  return api<IncidentResponse>(`/incidents/${id}/close`, { method: "PATCH" });
+}
