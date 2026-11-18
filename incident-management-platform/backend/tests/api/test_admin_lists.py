@@ -139,7 +139,7 @@ def test_admin_can_get_active_technicians(
 
         login(admin, admin_user)
 
-        response = admin.get("/users/technicians")
+        response = admin.get("/auth/technicians")
 
         assert response.status_code == 200, response.text
 
@@ -192,7 +192,7 @@ def test_admin_get_active_technicians_returns_empty_list(
 
         login(admin, admin_user)
 
-        response = admin.get("/users/technicians")
+        response = admin.get("/auth/technicians")
 
         assert response.status_code == 200
         assert response.json() == []
@@ -206,7 +206,7 @@ def test_admin_get_active_technicians_returns_empty_list(
     "endpoint",
     [
         "/incidents/all",
-        "/users/technicians",
+        "/auth/technicians",
     ],
 )
 @pytest.mark.parametrize(
@@ -249,7 +249,7 @@ def test_non_admin_cannot_access_admin_lists(
     "endpoint",
     [
         "/incidents/all",
-        "/users/technicians",
+        "/auth/technicians",
     ],
 )
 def test_unauthenticated_user_cannot_access_admin_lists(

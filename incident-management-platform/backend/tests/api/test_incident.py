@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.main import app
@@ -242,8 +243,11 @@ def test_get_incident_detail_and_prevent_access_to_other_user_incident(
         assert incident_details_4.status_code == 404
 
 
-def test_get_assigned_incident_lifecyle(
-    test_user: User, technician_user: User, other_technician_user: User
+def test_get_assigned_incident_lifecycle(
+    test_user: User,
+    technician_user: User,
+    other_technician_user: User,
+    db_session: Session,
 ) -> None:
     incident_payload_1 = {
         "title": "Incident utilisateur A - 1, Assignée à Tehcnician A ",
@@ -325,24 +329,27 @@ def test_get_assigned_incident_lifecyle(
         assert incident_response_3.status_code == 201
         incident_id_3 = incident_response_3.json()["id"]
 
+      
+
+        db_session.expire_all()
+
+        incident_1 = db_session.get(Incident, incident_id_1)
+        incident_2 = db_session.get(Incident, incident_id_2)
+        incident_3 = db_session.get(Incident, incident_id_3)
+
+        assert incident_1 is not None
+        assert incident_2 is not None
+        assert incident_3 is not None
+
+        incident_1.assigned_to_id = technician_user.id
+        incident_2.assigned_to_id = technician_user.id
+        incident_3.assigned_to_id = other_technician_user.id
+
+        db_session.flush()
+
         incident_technician_1_list = technician_1.get(
             "/incidents/assigned",
         )
-
-        with SessionLocal() as db:
-            incident_1 = db.get(Incident, incident_id_1)
-            incident_2 = db.get(Incident, incident_id_2)
-            incident_3 = db.get(Incident, incident_id_3)
-
-            assert incident_1 is not None
-            assert incident_2 is not None
-            assert incident_3 is not None
-
-            incident_1.assigned_to_id = technician_user.id
-            incident_2.assigned_to_id = technician_user.id
-            incident_3.assigned_to_id = other_technician_user.id
-
-            db.commit()
 
         assert incident_technician_1_list.status_code == 200
 
@@ -370,9 +377,7 @@ def test_user_get_incident_assigned_forbidden(
         "priority": "MEDIUM",
     }
 
-    with (
-        TestClient(app, client=("127.0.0.1", 50000)) as client,
-    ):
+    with (TestClient(app, client=("127.0.0.1", 50000)) as client,):
         # Connexion utilisateur A
         login_response_1 = client.post(
             "/auth/login",
@@ -399,9 +404,7 @@ def test_user_get_incident_assigned_forbidden(
 
 def test_technician_without_assigned_incident(technician_user: User) -> None:
 
-    with (
-        TestClient(app, client=("127.0.0.1", 50000)) as technician_1,
-    ):
+    with (TestClient(app, client=("127.0.0.1", 50000)) as technician_1,):
         # Connexion technicien A
 
         login_response_2 = technician_1.post(
@@ -421,5 +424,3 @@ def test_technician_without_assigned_incident(technician_user: User) -> None:
         body_list = incident_technician_1_list.json()
 
         assert len(body_list) == 0
-
-

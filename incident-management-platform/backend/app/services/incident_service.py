@@ -372,3 +372,54 @@ class IncidentService:
         )
 
         return incident
+
+    def close_incident(
+        self,
+        *,
+        incident_id: int,
+        actor_id: int,
+    ) -> Incident:
+
+        incident = self.incident_repository.get_by_id(incident_id=incident_id)
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if incident is None:
+            raise IncidentNotFoundError("L'incident n'existe pas")
+
+        if actor.role != UserRole.ADMIN and actor.id != incident.created_by_id:
+            raise NotEnoughAuthorization(
+                "Vous n'êtes pas autorisé à clôturer cet incident."
+            )
+
+        if incident.status is IncidentStatus.CLOSED:
+            raise IncidentStatusClosedError("L'incident est déjà fermé")
+
+        if incident.status is not IncidentStatus.RESOLVED:
+            raise InvalidStatusTransitionError(
+                "Seul un incident résolu peut être clôturé"
+            )
+
+        old_status = incident.status
+
+        incident.status = IncidentStatus.CLOSED
+        incident.closed_at = datetime.now(timezone.utc)
+
+        self.incident_history_repository.create(
+            incident_id=incident.id,
+            actor_id=actor_id,
+            action=IncidentHistoryAction.CLOSED,
+            field_name="status",
+            old_value=old_status.value,
+            new_value="CLOSED",
+        )
+
+        self.audit_repository.create(
+            event_type=AuditEventType.INCIDENT_CLOSED,
+            result=AuditResult.SUCCESS,
+            user_id=actor_id,
+        )
+
+        return incident

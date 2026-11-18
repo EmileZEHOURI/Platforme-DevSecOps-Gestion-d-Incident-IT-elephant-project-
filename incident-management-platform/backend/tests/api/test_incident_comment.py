@@ -1,6 +1,7 @@
-from datetime import UTC, datetime
+from datetime import timedelta
 
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.main import app
@@ -123,36 +124,47 @@ def test_comment_other_user_incident_returns_404(
 
 def test_comment_closed_incident_returns_409(
     test_user: User,
+    db_session: Session,
 ) -> None:
-    now = datetime.now(UTC)
 
-    # On crée directement un incident CLOSED en base,
-    # car l'US permettant de fermer un incident n'est pas encore implémentée.
-    with SessionLocal() as db:
-        closed_incident = Incident(
-            title="Incident fermé",
-            description="Cet incident est déjà résolu et fermé.",
-            category=IncidentCategory.ANOMALY,
-            priority=IncidentPriority.MEDIUM,
-            status=IncidentStatus.CLOSED,
-            created_by_id=test_user.id,
-            assigned_to_id=test_user.id,
-            resolution="Le problème a été résolu.",
-            resolved_at=now,
-            closed_at=now,
-        )
+    closed_incident = Incident(
+        title="Incident fermé",
+        description="Cet incident est déjà résolu et fermé.",
+        category=IncidentCategory.ANOMALY,
+        priority=IncidentPriority.MEDIUM,
+        status=IncidentStatus.OPEN,
+        created_by_id=test_user.id,
+        assigned_to_id=test_user.id,
+        resolution=None,
+        resolved_at=None,
+        closed_at=None,
+    )
 
-        db.add(closed_incident)
-        db.commit()
-        db.refresh(closed_incident)
+    db_session.add(closed_incident)
+    db_session.flush()
 
-        incident_id = closed_incident.id
+    closed_incident.status = IncidentStatus.CLOSED
+    closed_incident.resolution = "Le problème a été résolu."
+    closed_incident.resolved_at = (
+        closed_incident.created_at + timedelta(seconds=1)
+    )
+    closed_incident.closed_at = (
+        closed_incident.created_at + timedelta(seconds=2)
+    )
+
+    db_session.flush()
+
+    incident_id = closed_incident.id
 
     comment_payload = {
         "content": "Je tente de commenter un incident fermé.",
     }
 
-    with TestClient(app, client=("127.0.0.1", 50000)) as client:
+    with TestClient(
+        app,
+        client=("127.0.0.1", 50000),
+    ) as client:
+
         login_response = client.post(
             "/auth/login",
             json={
@@ -160,6 +172,7 @@ def test_comment_closed_incident_returns_409(
                 "password": "password",
             },
         )
+
         assert login_response.status_code == 200
 
         comment_response = client.post(
@@ -167,7 +180,7 @@ def test_comment_closed_incident_returns_409(
             json=comment_payload,
         )
 
-        assert comment_response.status_code == 409
+        assert comment_response.status_code == 409, comment_response.text
         assert (
             comment_response.json()["detail"]
             == "Impossible d’ajouter un commentaire à un incident fermé"

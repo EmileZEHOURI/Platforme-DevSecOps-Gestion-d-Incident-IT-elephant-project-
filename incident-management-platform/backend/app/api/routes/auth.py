@@ -121,7 +121,14 @@ def logout(
 @router.get("/technicians", response_model=list[UserResponse])
 def active_technician(
     db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[UserResponse]:
+
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès réservé aux administrateurs",
+        )
 
     user_repository = UserRepository(db)
 

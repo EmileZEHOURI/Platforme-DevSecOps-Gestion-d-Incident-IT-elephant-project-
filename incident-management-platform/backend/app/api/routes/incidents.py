@@ -485,6 +485,7 @@ def update_incident_status(
 
     return response
 
+
 @router.patch(
     "/{incident_id}/resolve",
     status_code=status.HTTP_200_OK,
@@ -519,7 +520,6 @@ def resolve_incident_route(
         db.commit()
         db.refresh(updated_resolved_incident)
         response = IncidentResponse.model_validate(updated_resolved_incident)
-
 
     except NotEnoughAuthorization:
         raise HTTPException(
@@ -565,7 +565,7 @@ def resolve_incident_route(
 
     except IncidentResolutionIsEmpty:
         raise HTTPException(
-            status_code= status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Le contenu ne doit pas être vide",
         ) from None
 
@@ -574,6 +574,79 @@ def resolve_incident_route(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur lors de la résolution de l'incident",
+        ) from None
+
+    return response
+
+
+@router.patch(
+    "/{incident_id}/close",
+    status_code=status.HTTP_200_OK,
+    response_model=IncidentResponse,
+)
+def close_incident_route(
+    incident_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> IncidentResponse:
+
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+    audit_repository = AuditRepository(db)
+    user_repository = UserRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        audit_repository,
+        user_repository,
+    )
+
+    try:
+        updated_closed_incident = incident_service.close_incident(
+            incident_id=incident_id,
+            actor_id=current_user.id,
+        )
+
+        db.commit()
+        db.refresh(updated_closed_incident)
+        response = IncidentResponse.model_validate(updated_closed_incident)
+
+    except NotEnoughAuthorization:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé, vous n'avez pas l'autorisation nécessaire",
+        ) from None
+
+    except IncidentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="incident inexistant ou inaccessible",
+        ) from None
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except IncidentStatusClosedError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Incident déjà fermé",
+        ) from None
+
+    except InvalidStatusTransitionError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Seul un incident résolu peut être fermé",
+        ) from None
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la clôture de l'incident",
         ) from None
 
     return response
