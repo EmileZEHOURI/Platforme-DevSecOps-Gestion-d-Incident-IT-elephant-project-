@@ -97,3 +97,11 @@
 .assignment-dialog { margin:auto; width:min(480px,calc(100% - 32px)); max-height:90dvh; overflow:auto; color:var(--foreground); box-shadow:0 20px 75px #17293642; }
 .assignment-dialog::backdrop { background:#182a30a6; }
 .assignment-dialog p { overflow-wrap:anywhere; }
+.incident-history-list { list-style:none; padding:24px 26px; margin:0; }
+.incident-history-list li { position:relative; border-left:2px solid var(--border); padding:0 0 24px 22px; overflow-wrap:anywhere; }
+.incident-history-list li:last-child { padding-bottom:0; }
+.incident-history-list li::before { content:""; position:absolute; left:-5px; top:6px; width:8px; height:8px; border-radius:50%; background:var(--accent); }
+.incident-history-list h3 { font-size:14px; margin-bottom:7px; }
+.incident-history-list .muted { font-size:12px; }
+.history-change { margin-top:10px; font-size:13px; white-space:pre-wrap; }
+

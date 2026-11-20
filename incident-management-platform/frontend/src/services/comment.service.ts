@@ -1,3 +1,4 @@
+import { notifyIncidentUpdate } from "@/lib/incident-updates";
 import { api } from "@/lib/api";
 import type { CommentCreate, CommentResponse } from "@/types/comment";
 
@@ -6,5 +7,5 @@ export function createComment(incidentId: number, data: CommentCreate): Promise<
     method: "POST",
     // The incident comes from the URL; identity and dates belong to the backend.
     body: JSON.stringify({ content: data.content.trim() }),
-  });
+  }).then(result => notifyIncidentUpdate(incidentId, result));
 }

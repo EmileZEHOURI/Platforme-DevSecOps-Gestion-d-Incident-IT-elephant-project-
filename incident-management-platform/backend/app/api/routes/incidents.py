@@ -20,6 +20,7 @@ from app.schemas.incident import (
     IncidentResolveRequest,
     IncidentResponse,
     IncidentStatusUpdate,
+    IncidentHistoryResponse,
 )
 from app.schemas.incident_comment import CommentCreate, CommentResponse
 from app.services.incident_comment_service import (
@@ -650,3 +651,61 @@ def close_incident_route(
         ) from None
 
     return response
+
+
+@router.get(
+    "/{incident_id}/history",
+    status_code=status.HTTP_200_OK,
+    response_model=list[IncidentHistoryResponse],
+)
+def list_incident_history_route(
+    incident_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> list[IncidentHistoryResponse]:
+
+    incident_repository = IncidentRepository(db)
+    incident_history_repository = IncidentHistoryRepository(db)
+
+    incident_service = IncidentService(
+        incident_repository,
+        incident_history_repository,
+        AuditRepository(db),
+        UserRepository(db),
+    )
+
+    try:
+        result = incident_service.list_incident_history(
+            incident_id=incident_id, actor_id=current_user.id
+        )
+
+        responses = [
+            IncidentHistoryResponse.model_validate(event) for event in result
+        ]
+
+        return responses
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except IncidentNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="incident inexistant ou inaccessible",
+        ) from None
+
+    except NotEnoughAuthorization:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès refusé, vous n'avez pas l'autorisation nécessaire",
+        ) from None
+
+    except SQLAlchemyError:
+        db.rollback()
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Erreur lors de la récupération de l'historique",
+    ) from None

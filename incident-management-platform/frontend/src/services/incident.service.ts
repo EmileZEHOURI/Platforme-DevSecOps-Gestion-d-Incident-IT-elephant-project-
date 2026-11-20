@@ -1,3 +1,5 @@
+import { notifyIncidentUpdate } from "@/lib/incident-updates";
+import type { IncidentHistoryEvent } from "@/types/incident-history";
 import type { User } from "@/types/auth";
 import { api } from "@/lib/api";
 import type { IncidentCreate, IncidentPriority, IncidentResponse } from "@/types/incident";
@@ -40,28 +42,33 @@ export const listTechnicians = () => api<User[]>("/users/technicians");
 export function assignIncident(id: number, target: number) {
   return api<IncidentResponse>(`/incidents/${id}/assignment`, {
     method: "PATCH", body: JSON.stringify({ assigned_to_id: target }),
-  });
+  }).then(result => notifyIncidentUpdate(id, result));
 }
 
 export function updateIncidentPriority(id: number, priority: IncidentPriority) {
   return api<IncidentResponse>(`/incidents/${id}/priority`, {
     method: "PATCH",
     body: JSON.stringify({ priority }),
-  });
+  }).then(result => notifyIncidentUpdate(id, result));
 }
 
 export function startIncident(id: number): Promise<IncidentResponse> {
   return api<IncidentResponse>(`/incidents/${id}/status`, {
     method: "PATCH", body: JSON.stringify({ status: "IN_PROGRESS" }),
-  });
+  }).then(result => notifyIncidentUpdate(id, result));
 }
 
 export function resolveIncident(id: number, resolution: string): Promise<IncidentResponse> {
   return api<IncidentResponse>(`/incidents/${id}/resolve`, {
     method: "PATCH", body: JSON.stringify({ resolution: resolution.trim() }),
-  });
+  }).then(result => notifyIncidentUpdate(id, result));
 }
 
 export function closeIncident(id: number): Promise<IncidentResponse> {
-  return api<IncidentResponse>(`/incidents/${id}/close`, { method: "PATCH" });
+  return api<IncidentResponse>(`/incidents/${id}/close`, { method: "PATCH" }).then(result => notifyIncidentUpdate(id, result));
+}
+export function getIncidentHistory(id: string, signal?: AbortSignal): Promise<IncidentHistoryEvent[]> {
+  return api<IncidentHistoryEvent[]>(`/incidents/${encodeURIComponent(id)}/history`, {
+    method: "GET", signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12000)]) : undefined,
+  });
 }

@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.enums import IncidentHistoryAction
@@ -32,3 +33,15 @@ class IncidentHistoryRepository:
         self.db.flush()
 
         return incident_history
+
+    def list_by_incident(
+        self,
+        incident_id: int,
+    ) -> list[IncidentHistory]:
+        statement = (
+            select(IncidentHistory)
+            .where(IncidentHistory.incident_id == incident_id)
+            .order_by(IncidentHistory.created_at.asc(), IncidentHistory.id.asc())
+        )
+
+        return list(self.db.scalars(statement).all())

@@ -1,5 +1,6 @@
 "use client";
 
+import { IncidentHistory } from "@/components/incident-history";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useIncidentClose } from "@/components/incident-close";
@@ -62,6 +63,7 @@ function DetailContent({ id }: { id: string }) {
           : state.code === 401 ? <Link className="button button-primary" href={`/login?next=${encodeURIComponent(`/dashboard/incidents/${id}`)}`}>Se reconnecter</Link>
           : <Button variant="secondary" onClick={() => { setState({ status: "loading" }); setAttempt(value => value + 1); }}>Réessayer</Button>}
       </StatePanel></section>
+      {state.code !== 401 && <IncidentHistory id={id} />}
     </>;
   }
 
@@ -82,6 +84,7 @@ function DetailContent({ id }: { id: string }) {
           <p className={`incident-detail-text ${incident.resolution ? "" : "muted"}`}>{incident.resolution || "Aucune résolution renseignée pour le moment."}</p>
         </section>
         <IncidentComments key={incident.id} incident={incident} />
+        <IncidentHistory id={id} />
       </div>
       <div className="incident-detail-side">
         {user?.role === "ADMIN" && <DetailAssignment incident={incident} admin={user} saved={updated => setState({status:"success", incident:updated})} />}

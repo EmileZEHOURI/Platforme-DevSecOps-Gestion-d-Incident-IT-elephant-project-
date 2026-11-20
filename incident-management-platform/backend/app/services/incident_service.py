@@ -9,6 +9,7 @@ from app.models.enums import (
     UserRole,
 )
 from app.models.incident import Incident
+from app.models.history import IncidentHistory
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
@@ -423,3 +424,36 @@ class IncidentService:
         )
 
         return incident
+
+    def list_incident_history(
+        self,
+        *,
+        incident_id: int,
+        actor_id: int,
+    ) -> list[IncidentHistory]:
+
+        incident = self.incident_repository.get_by_id(incident_id=incident_id)
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if incident is None:
+            raise IncidentNotFoundError("L'incident n'existe pas")
+
+        is_admin = actor.role == UserRole.ADMIN
+
+        is_creator = actor.id == incident.created_by_id
+
+        is_assigned_technician = (
+            actor.role == UserRole.TECHNICIAN and actor.id == incident.assigned_to_id
+        )
+
+        if not (is_admin or is_creator or is_assigned_technician):
+            raise NotEnoughAuthorization(
+                "Vous n'êtes pas autorisé à consulter l'historique de cet incident."
+            )
+
+        return self.incident_history_repository.list_by_incident(
+            incident_id=incident_id
+        )

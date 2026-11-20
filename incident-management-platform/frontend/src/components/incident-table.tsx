@@ -13,7 +13,7 @@ export function IncidentTable({ incidents, management, action }: { action?: (inc
         <thead><tr><th scope="col">Référence</th><th scope="col">Titre</th><th scope="col">Catégorie</th><th scope="col">Priorité</th><th scope="col">Statut</th><th scope="col">Créé le</th>{management && <th scope="col">Responsable</th>}{(management || action) && <th scope="col">Action</th>}</tr></thead>
         <tbody>{incidents.map(incident => (
           <tr key={incident.id}>
-            <th scope="row" className="incident-reference">{management ? incident.reference : <Link className="incident-detail-link" href={`/dashboard/incidents/${incident.id}`} aria-label={`Voir le détail de ${incident.reference}`}>{incident.reference}</Link>}</th>
+            <th scope="row" className="incident-reference">{<Link className="incident-detail-link" href={`/dashboard/incidents/${incident.id}`} aria-label={`Voir le détail de ${incident.reference}`}>{incident.reference}</Link>}</th>
             <td className="incident-list-title">{incident.title}
               {incident.resolution && <details className="mt-3"><summary className="incident-detail-link cursor-pointer">Consulter la résolution</summary>
                 <p className="whitespace-pre-wrap break-words mt-2">{incident.resolution}</p>
