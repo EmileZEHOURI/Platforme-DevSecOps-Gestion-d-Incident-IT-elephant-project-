@@ -3,7 +3,12 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus
+from app.models.enums import (
+    IncidentCategory,
+    IncidentHistoryAction,
+    IncidentPriority,
+    IncidentStatus,
+)
 
 
 class IncidentCreate(BaseModel):
@@ -79,3 +84,15 @@ class IncidentResolveRequest(BaseModel):
             min_length=1,
         ),
     ]
+
+class IncidentHistoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    incident_id: int
+    actor_id: int
+    action: IncidentHistoryAction
+    field_name: str | None
+    old_value: str | None
+    new_value: str | None
+    created_at: datetime
