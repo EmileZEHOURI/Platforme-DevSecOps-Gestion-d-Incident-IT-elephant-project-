@@ -1,7 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
-from app.models.enums import IncidentStatus
+from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus
 from app.models.incident import Incident
 from app.schemas.incident import IncidentCreate
 
@@ -26,9 +26,7 @@ class IncidentRepository:
         return incident
 
     def get_all_incident(self) -> list[Incident]:
-        statement = (
-            select(Incident)
-        )
+        statement = select(Incident)
 
         return self.db.scalars(statement).all()
 
@@ -72,3 +70,61 @@ class IncidentRepository:
         )
 
         return self.db.scalars(statement).all()
+
+    def list_by_assignee(
+        self,
+        assignee_id: int,
+        *,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> list[Incident]:
+        statement = select(Incident).where(Incident.assigned_to_id == assignee_id)
+
+        statement = self._apply_filters(
+            statement, status=status, priority=priority, category=category
+        )
+
+        statement = statement.order_by(Incident.created_at.desc(), Incident.id.desc())
+
+        return self.db.scalars(statement).all()
+
+    def list_all(
+        self,
+        *,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> list[Incident]:
+        statement = select(Incident)
+
+        statement = self._apply_filters(
+            statement, status=status, priority=priority, category=category
+        )
+
+        statement = statement.order_by(
+            Incident.created_at.desc(),
+            Incident.id.desc(),
+        )
+
+        return self.db.scalars(statement).all()
+
+    def _apply_filters(
+        self,
+        statement: Select[tuple[Incident]],
+        *,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> Select[tuple[Incident]]:
+
+        if status is not None:
+            statement = statement.where(Incident.status == status)
+
+        if priority is not None:
+            statement = statement.where(Incident.priority == priority)
+
+        if category is not None:
+            statement = statement.where(Incident.category == category)
+
+        return statement

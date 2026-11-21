@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
-from app.models.enums import UserRole
+from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus, UserRole
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_comment_repository import IncidentCommentRepository
@@ -113,6 +113,7 @@ def get_incident_list(
     return responses
 
 
+
 @router.get(
     "/all",
     status_code=status.HTTP_200_OK,
@@ -121,15 +122,15 @@ def get_incident_list(
 def get_all_incident(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    incident_status: Annotated[
+        IncidentStatus | None, Query(alias="status")
+    ] = None,
+    priority: IncidentPriority | None = None,
+    category: IncidentCategory | None = None,
 ) -> list[IncidentResponse]:
+
     incident_repository = IncidentRepository(db)
     incident_history_repository = IncidentHistoryRepository(db)
-
-    if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accès réservé aux administrateurs",
-        )
 
     incident_service = IncidentService(
         incident_repository,
@@ -138,11 +139,39 @@ def get_all_incident(
         UserRepository(db),
     )
 
-    result = incident_service.list_all_incidents()
+    try:
+        result = incident_service.list_all_incidents(
+            actor_id=current_user.id,
+            status=incident_status,
+            priority=priority,
+            category=category,
+        )
 
-    responses = [IncidentResponse.model_validate(incident) for incident in result]
+        return [
+            IncidentResponse.model_validate(incident)
+            for incident in result
+        ]
 
-    return responses
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except NotEnoughAuthorization:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Accès réservé aux administrateurs",
+        ) from None
+
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la récupération des incidents",
+        ) from None
+
+
 
 
 @router.get(
@@ -153,6 +182,11 @@ def get_all_incident(
 def get_assigned_incident_list(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
+    incident_status: Annotated[
+        IncidentStatus | None, Query(alias="status")
+    ] = None,
+    priority: IncidentPriority | None = None,
+    category: IncidentCategory | None = None,
 ) -> list[IncidentResponse]:
 
     incident_repository = IncidentRepository(db)
@@ -165,16 +199,38 @@ def get_assigned_incident_list(
         UserRepository(db),
     )
 
-    if current_user.role not in (UserRole.ADMIN, UserRole.TECHNICIAN):
+    try:
+        result = incident_service.list_assigned_incidents(
+            actor_id=current_user.id,
+            status=incident_status,
+            priority=priority,
+            category=category,
+        )
+
+        return [
+            IncidentResponse.model_validate(incident)
+            for incident in result
+        ]
+
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except NotEnoughAuthorization:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Accès refusé, vous n'avez pas l'authorisation nécessaire",
+            detail="Accès refusé, autorisation insuffisante",
         ) from None
-    result = incident_service.list_assigned_incidents(assigned_to_id=current_user.id)
 
-    responses = [IncidentResponse.model_validate(incident) for incident in result]
+    except SQLAlchemyError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erreur lors de la récupération des incidents assignés",
+        ) from None
 
-    return responses
 
 
 @router.get(
@@ -709,3 +765,5 @@ def list_incident_history_route(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Erreur lors de la récupération de l'historique",
     ) from None
+
+

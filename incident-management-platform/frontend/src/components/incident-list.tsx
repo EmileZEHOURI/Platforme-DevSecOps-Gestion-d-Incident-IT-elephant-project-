@@ -1,5 +1,6 @@
 "use client";
 
+import { IncidentFiltersBar, hasIncidentFilters, filterErrors } from "@/components/incident-filters-bar";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useIncidentResolve } from "@/components/incident-resolve";
@@ -10,7 +11,7 @@ import { IncidentTable } from "@/components/incident-table";
 import { ApiError } from "@/lib/api";
 import { canViewAssignedIncidents } from "@/lib/permissions";
 import { listIncidents, listAssignedIncidents } from "@/services/incident.service";
-import type { IncidentResponse } from "@/types/incident";
+import type { IncidentFilters, IncidentResponse } from "@/types/incident";
 
 type IncidentScope = "created" | "assigned";
 
@@ -22,13 +23,14 @@ type ListState =
 function UserIncidentList({ scope }: { scope: IncidentScope }) {
   const assigned = scope === "assigned";
   const [state, setState] = useState<ListState>({ status: "loading" });
+  const [filters, setFilters] = useState<IncidentFilters>({});
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-    const fetchIncidents = assigned ? listAssignedIncidents : listIncidents;
-    void fetchIncidents(controller.signal).then(incidents => {
+    const request = assigned ? listAssignedIncidents(filters, controller.signal) : listIncidents(controller.signal);
+    void request.then(incidents => {
       if (active) setState({ status: "success", incidents });
     }).catch(error => {
       if (active) setState({
@@ -38,14 +40,18 @@ function UserIncidentList({ scope }: { scope: IncidentScope }) {
       });
     });
     return () => { active = false; controller.abort(); };
-  }, [attempt, assigned]);
+  }, [attempt, assigned, filters]);
 
   function reload() { setState({ status: "loading" }); setAttempt(value => value + 1); }
 
+  function changeFilters(next: IncidentFilters) { setState({ status: "loading" }); setFilters(next); }
+
   const start = useIncidentStart(updated => {
+    if (assigned) { reload(); return; }
     setState(current => current.status === "success" ? { ...current, incidents: current.incidents.map(i => i.id === updated.id ? updated : i) } : current);
   }, reload);
   const resolve = useIncidentResolve(updated => {
+    if (assigned) { reload(); return; }
     setState(current => current.status === "success" ? { ...current, incidents: current.incidents.map(i => i.id === updated.id ? updated : i) } : current);
   }, reload);
   return (
@@ -56,16 +62,17 @@ function UserIncidentList({ scope }: { scope: IncidentScope }) {
         <h2 id="incident-list-heading">{assigned ? "Mes incidents assignés" : "Mes incidents"}</h2>
         <Button variant="ghost" disabled={state.status === "loading"} onClick={reload}>Actualiser ↻</Button>
       </div>
+      {assigned && <IncidentFiltersBar filters={filters} onChange={changeFilters} count={state.status === "success" ? state.incidents.length : undefined} />}
       {state.status === "loading" && <div className="incident-list-loading" role="status"><span className="spinner" aria-hidden="true" />Chargement de vos incidents…</div>}
       {state.status === "error" && <StatePanel error
         title={state.code === 401 ? "Session expirée" : state.code === 403 ? "Accès refusé" : "Impossible de charger les incidents"}
-        description={state.message}>
+        description={(assigned && filterErrors[state.code ?? 0]) || state.message}>
         {state.code === 401
           ? <Link className="button button-primary" href={`/login?next=${encodeURIComponent(assigned ? "/dashboard/incidents/assigned" : "/dashboard/incidents")}`}>Se reconnecter</Link>
           : <Button variant="secondary" onClick={reload}>Réessayer</Button>}
       </StatePanel>}
       {state.status === "success" && (state.incidents.length === 0
-        ? assigned ? <StatePanel title="Aucun incident assigné" description="Aucun incident ne vous est actuellement assigné. Votre file de travail apparaîtra ici dès une nouvelle assignation." /> : <StatePanel title="Aucun incident pour le moment" description="Vos prochains signalements apparaîtront ici. Vous pouvez créer un incident dès maintenant.">
+        ? assigned && hasIncidentFilters(filters) ? <StatePanel title="Aucun résultat" description="Aucun incident ne correspond aux filtres sélectionnés."><Button variant="secondary" onClick={() => changeFilters({})}>Réinitialiser les filtres</Button></StatePanel> : assigned ? <StatePanel title="Aucun incident assigné" description="Aucun incident ne vous est actuellement assigné. Votre file de travail apparaîtra ici dès une nouvelle assignation." /> : <StatePanel title="Aucun incident pour le moment" description="Vos prochains signalements apparaîtront ici. Vous pouvez créer un incident dès maintenant.">
           <Link className="button button-secondary" href="/dashboard/incidents/new">Créer mon premier incident</Link>
         </StatePanel>
         : <>

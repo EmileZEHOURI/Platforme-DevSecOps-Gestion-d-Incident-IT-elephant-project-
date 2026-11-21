@@ -33,3 +33,10 @@ export interface IncidentResponse extends IncidentCreate {
   resolved_at: string | null;
   closed_at: string | null;
 }
+
+export type IncidentStatus = keyof typeof incidentStatuses;
+export interface IncidentFilters {
+  status?: IncidentStatus;
+  priority?: IncidentPriority;
+  category?: IncidentCategory;
+}

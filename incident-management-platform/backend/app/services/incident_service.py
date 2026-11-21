@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from app.models.enums import (
     AuditEventType,
     AuditResult,
+    IncidentCategory,
     IncidentHistoryAction,
     IncidentPriority,
     IncidentStatus,
@@ -115,13 +116,6 @@ class IncidentService:
             raise IncidentNotFoundError("Incident introuvable")
 
         return incident
-
-    def list_assigned_incidents(
-        self,
-        assigned_to_id: int,
-    ) -> list[Incident]:
-
-        return self.incident_repository.list_by_assignee(assigned_to_id=assigned_to_id)
 
     def assign_incident(
         self,
@@ -456,4 +450,55 @@ class IncidentService:
 
         return self.incident_history_repository.list_by_incident(
             incident_id=incident_id
+        )
+
+    def list_assigned_incidents(
+        self,
+        *,
+        actor_id: int,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> list[Incident]:
+
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if actor.role not in (UserRole.ADMIN, UserRole.TECHNICIAN):
+            raise NotEnoughAuthorization(
+                "Vous n'êtes pas autorisé à consulter cette liste d'incidents."
+            )
+
+        return self.incident_repository.list_by_assignee(
+            assignee_id=actor_id,
+            status=status,
+            category=category,
+            priority=priority,
+        )
+
+    def list_all_incidents(
+        self,
+        *,
+        actor_id: int,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> list[Incident]:
+
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if actor.role != UserRole.ADMIN:
+            raise NotEnoughAuthorization(
+                "Vous n'êtes pas autorisé à consulter cette liste d'incident."
+            )
+
+        return self.incident_repository.list_all(
+            status=status,
+            category=category,
+            priority=priority,
         )
