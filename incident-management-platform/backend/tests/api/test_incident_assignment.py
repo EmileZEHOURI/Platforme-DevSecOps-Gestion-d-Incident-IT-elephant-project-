@@ -12,7 +12,6 @@ from app.models.enums import IncidentStatus, UserRole
 from app.models.incident import Incident
 from app.models.user import User
 
-
 # ==========================================================
 # HELPERS
 # ==========================================================
@@ -169,9 +168,31 @@ def test_admin_assigns_incident_to_technician(
         assert audit_count_after == audit_count_before + 1
 
         assigned_response = technician.get("/incidents/assigned")
+
         assert assigned_response.status_code == 200, assigned_response.text
-        returned_ids = [incident["id"] for incident in assigned_response.json()]
-        assert incident_id in returned_ids
+
+        body = assigned_response.json()
+
+        # US-14 : vérification du format paginé.
+        assert isinstance(body, dict)
+        assert isinstance(body["items"], list)
+
+        # Le technicien doit voir l'incident qui vient
+        # de lui être assigné.
+        returned_ids = [incident["id"] for incident in body["items"]]
+
+        assert returned_ids == [incident_id]
+
+        # Vérification des métadonnées de pagination.
+        assert body["total"] == 1
+        assert body["page"] == 1
+        assert body["page_size"] == 20
+        assert body["total_pages"] == 1
+        assert body["has_next"] is False
+        assert body["has_previous"] is False
+
+        # Vérification de l'assignation dans la réponse.
+        assert body["items"][0]["assigned_to_id"] == other_technician_user.id
 
 
 def test_admin_reassigns_incident(

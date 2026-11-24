@@ -40,3 +40,18 @@ export interface IncidentFilters {
   priority?: IncidentPriority;
   category?: IncidentCategory;
 }
+
+export interface IncidentListParams extends IncidentFilters {
+  page?: number;
+  page_size?: number;
+}
+
+export interface PaginatedIncidentsResponse {
+  items: IncidentResponse[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+}

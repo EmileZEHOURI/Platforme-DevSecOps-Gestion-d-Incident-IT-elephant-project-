@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
-from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus, UserRole
+from app.models.enums import (
+    IncidentCategory,
+    IncidentPriority,
+    IncidentStatus,
+    UserRole,
+)
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_comment_repository import IncidentCommentRepository
@@ -21,6 +26,7 @@ from app.schemas.incident import (
     IncidentResponse,
     IncidentStatusUpdate,
     IncidentHistoryResponse,
+    PaginatedIncidentsResponse,
 )
 from app.schemas.incident_comment import CommentCreate, CommentResponse
 from app.services.incident_comment_service import (
@@ -37,6 +43,7 @@ from app.services.incident_service import (
     InvalidAssignmentTargetError,
     InvalidStatusTransitionError,
     NotEnoughAuthorization,
+    PaginationError,
     UserInactiveError,
     UserNotFoundError,
 )
@@ -113,21 +120,20 @@ def get_incident_list(
     return responses
 
 
-
 @router.get(
     "/all",
     status_code=status.HTTP_200_OK,
-    response_model=list[IncidentResponse],
+    response_model=PaginatedIncidentsResponse,
 )
 def get_all_incident(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-    incident_status: Annotated[
-        IncidentStatus | None, Query(alias="status")
-    ] = None,
+    incident_status: Annotated[IncidentStatus | None, Query(alias="status")] = None,
     priority: IncidentPriority | None = None,
     category: IncidentCategory | None = None,
-) -> list[IncidentResponse]:
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PaginatedIncidentsResponse:
 
     incident_repository = IncidentRepository(db)
     incident_history_repository = IncidentHistoryRepository(db)
@@ -140,17 +146,16 @@ def get_all_incident(
     )
 
     try:
-        result = incident_service.list_all_incidents(
+        result = incident_service.paginate_all_incidents(
             actor_id=current_user.id,
+            page=page,
+            page_size=page_size,
             status=incident_status,
             priority=priority,
             category=category,
         )
 
-        return [
-            IncidentResponse.model_validate(incident)
-            for incident in result
-        ]
+        return PaginatedIncidentsResponse.model_validate(result) 
 
     except UserNotFoundError:
         raise HTTPException(
@@ -163,7 +168,11 @@ def get_all_incident(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Accès réservé aux administrateurs",
         ) from None
-
+    except PaginationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from None
     except SQLAlchemyError:
         db.rollback()
         raise HTTPException(
@@ -172,22 +181,20 @@ def get_all_incident(
         ) from None
 
 
-
-
 @router.get(
     "/assigned",
     status_code=status.HTTP_200_OK,
-    response_model=list[IncidentResponse],
+    response_model=PaginatedIncidentsResponse,
 )
 def get_assigned_incident_list(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-    incident_status: Annotated[
-        IncidentStatus | None, Query(alias="status")
-    ] = None,
+    incident_status: Annotated[IncidentStatus | None, Query(alias="status")] = None,
     priority: IncidentPriority | None = None,
     category: IncidentCategory | None = None,
-) -> list[IncidentResponse]:
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> PaginatedIncidentsResponse:
 
     incident_repository = IncidentRepository(db)
     incident_history_repository = IncidentHistoryRepository(db)
@@ -200,17 +207,16 @@ def get_assigned_incident_list(
     )
 
     try:
-        result = incident_service.list_assigned_incidents(
+        result = incident_service.paginate_assigned_incidents(
             actor_id=current_user.id,
+            page=page,
+            page_size=page_size,
             status=incident_status,
             priority=priority,
             category=category,
         )
 
-        return [
-            IncidentResponse.model_validate(incident)
-            for incident in result
-        ]
+        return PaginatedIncidentsResponse.model_validate(result) 
 
     except UserNotFoundError:
         raise HTTPException(
@@ -223,6 +229,11 @@ def get_assigned_incident_list(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Accès refusé, autorisation insuffisante",
         ) from None
+    except PaginationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from None
 
     except SQLAlchemyError:
         db.rollback()
@@ -230,7 +241,6 @@ def get_assigned_incident_list(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erreur lors de la récupération des incidents assignés",
         ) from None
-
 
 
 @router.get(
@@ -735,9 +745,7 @@ def list_incident_history_route(
             incident_id=incident_id, actor_id=current_user.id
         )
 
-        responses = [
-            IncidentHistoryResponse.model_validate(event) for event in result
-        ]
+        responses = [IncidentHistoryResponse.model_validate(event) for event in result]
 
         return responses
 
@@ -765,5 +773,3 @@ def list_incident_history_route(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Erreur lors de la récupération de l'historique",
     ) from None
-
-

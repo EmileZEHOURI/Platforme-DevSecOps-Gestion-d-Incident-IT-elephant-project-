@@ -1,4 +1,4 @@
-from sqlalchemy import Select, select
+from sqlalchemy import Select, select, func
 from sqlalchemy.orm import Session
 
 from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus
@@ -62,15 +62,6 @@ class IncidentRepository:
 
         return self.db.execute(statement).scalar_one_or_none()
 
-    def list_by_assignee(self, *, assigned_to_id: int) -> list[Incident]:
-        statement = (
-            select(Incident)
-            .where(Incident.assigned_to_id == assigned_to_id)
-            .order_by(Incident.created_at.desc())
-        )
-
-        return self.db.scalars(statement).all()
-
     def list_by_assignee(
         self,
         assignee_id: int,
@@ -78,6 +69,8 @@ class IncidentRepository:
         status: IncidentStatus | None = None,
         priority: IncidentPriority | None = None,
         category: IncidentCategory | None = None,
+        limit: int | None = None,
+        offset: int = 0,
     ) -> list[Incident]:
         statement = select(Incident).where(Incident.assigned_to_id == assignee_id)
 
@@ -87,7 +80,12 @@ class IncidentRepository:
 
         statement = statement.order_by(Incident.created_at.desc(), Incident.id.desc())
 
-        return self.db.scalars(statement).all()
+        if limit is not None:
+            statement = statement.limit(limit)
+
+        statement = statement.offset(offset)
+
+        return list(self.db.scalars(statement).all())
 
     def list_all(
         self,
@@ -95,6 +93,8 @@ class IncidentRepository:
         status: IncidentStatus | None = None,
         priority: IncidentPriority | None = None,
         category: IncidentCategory | None = None,
+        limit: int | None = None,
+        offset: int = 0,
     ) -> list[Incident]:
         statement = select(Incident)
 
@@ -107,7 +107,12 @@ class IncidentRepository:
             Incident.id.desc(),
         )
 
-        return self.db.scalars(statement).all()
+        if limit is not None:
+            statement = statement.limit(limit)
+
+        statement = statement.offset(offset)
+
+        return list(self.db.scalars(statement).all())
 
     def _apply_filters(
         self,
@@ -128,3 +133,45 @@ class IncidentRepository:
             statement = statement.where(Incident.category == category)
 
         return statement
+
+    def count_by_assignee(
+        self,
+        *,
+        assignee_id: int,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> int:
+
+        statement = select(Incident).where(Incident.assigned_to_id == assignee_id)
+
+        statement = self._apply_filters(
+            statement, status=status, priority=priority, category=category
+        )
+
+        statement = statement.with_only_columns(
+            func.count(Incident.id),
+            maintain_column_froms=True,
+        )
+
+        return self.db.scalar(statement) or 0
+
+    def count_all(
+        self,
+        *,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> int:
+        statement = select(Incident)
+
+        statement = self._apply_filters(
+            statement, status=status, priority=priority, category=category
+        )
+
+        statement = statement.with_only_columns(
+            func.count(Incident.id),
+            maintain_column_froms=True,
+        )
+
+        return self.db.scalar(statement) or 0

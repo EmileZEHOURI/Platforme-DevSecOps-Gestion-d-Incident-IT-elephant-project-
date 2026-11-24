@@ -122,7 +122,7 @@ def test_incident_is_assigned_to_technician() -> None:
 
     db.scalars.return_value.all.return_value = expected_incidents_list
 
-    incidents_assigned_list = repository.list_by_assignee(assigned_to_id=1)
+    incidents_assigned_list = repository.list_by_assignee(assignee_id=1)
 
     assert len(incidents_assigned_list) == 3
     assert all(incident.assigned_to_id == 1 for incident in incidents_assigned_list)
@@ -135,7 +135,7 @@ def test_list_by_assignee_returns_empty_list_when_no_incident_is_assigned() -> N
     repository = IncidentRepository(db)
     db.scalars.return_value.all.return_value = []
 
-    incidents_assigned_list = repository.list_by_assignee(assigned_to_id=2)
+    incidents_assigned_list = repository.list_by_assignee(assignee_id=2)
 
     assert len(incidents_assigned_list) == 0
     db.scalars.assert_called_once()

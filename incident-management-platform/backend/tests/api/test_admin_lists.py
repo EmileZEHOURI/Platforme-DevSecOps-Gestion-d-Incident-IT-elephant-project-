@@ -12,6 +12,7 @@ from app.models.enums import UserRole
 # HELPERS
 # ============================================
 
+
 def login(client: TestClient, user: User) -> None:
     response = client.post(
         "/auth/login",
@@ -44,6 +45,7 @@ def create_incident(client: TestClient, title: str) -> int:
 # GET /incidents/all
 # ============================================
 
+
 def test_admin_can_get_all_incidents(
     test_user: User,
     other_user: User,
@@ -75,17 +77,46 @@ def test_admin_can_get_all_incidents(
 
         body = response.json()
 
-        assert isinstance(body, list)
-        assert len(body) == 2
+        # US-14 : la réponse est désormais un objet paginé.
+        assert isinstance(body, dict)
 
-        returned_ids = {incident["id"] for incident in body}
+        assert set(body) == {
+            "items",
+            "total",
+            "page",
+            "page_size",
+            "total_pages",
+            "has_next",
+            "has_previous",
+        }
 
-        assert incident_id_1 in returned_ids
-        assert incident_id_2 in returned_ids
+        incidents = body["items"]
+
+        assert isinstance(incidents, list)
+        assert len(incidents) == 2
+
+        # Vérification des métadonnées de pagination.
+        assert body["total"] == 2
+        assert body["page"] == 1
+        assert body["page_size"] == 20
+        assert body["total_pages"] == 1
+        assert body["has_next"] is False
+        assert body["has_previous"] is False
+
+        # Vérification des incidents récupérés.
+        returned_ids = {
+            incident["id"]
+            for incident in incidents
+        }
+
+        assert returned_ids == {
+            incident_id_1,
+            incident_id_2,
+        }
 
         incidents_by_id = {
             incident["id"]: incident
-            for incident in body
+            for incident in incidents
         }
 
         assert (
@@ -112,13 +143,26 @@ def test_admin_get_all_incidents_returns_empty_list(
 
         response = admin.get("/incidents/all")
 
-        assert response.status_code == 200
-        assert response.json() == []
+        assert response.status_code == 200, response.text
+
+        body = response.json()
+
+        # US-14 : une liste vide est contenue dans "items".
+        assert isinstance(body, dict)
+        assert body["items"] == []
+
+        assert body["total"] == 0
+        assert body["page"] == 1
+        assert body["page_size"] == 20
+        assert body["total_pages"] == 0
+        assert body["has_next"] is False
+        assert body["has_previous"] is False
 
 
 # ============================================
-# GET /users/technicians
+# GET /auth/technicians
 # ============================================
+
 
 def test_admin_can_get_active_technicians(
     db_session: Session,
@@ -145,17 +189,21 @@ def test_admin_can_get_active_technicians(
 
         body = response.json()
 
+        # Cet endpoint retourne toujours une liste.
         assert isinstance(body, list)
 
-        returned_ids = {user["id"] for user in body}
+        returned_ids = {
+            user["id"]
+            for user in body
+        }
 
-        # Technicien actif : visible
+        # Technicien actif : visible.
         assert technician_user.id in returned_ids
 
-        # Technicien inactif : invisible
+        # Technicien inactif : invisible.
         assert other_technician_user.id not in returned_ids
 
-        # Autres rôles : invisibles
+        # Autres rôles : invisibles.
         assert test_user.id not in returned_ids
         assert admin_user.id not in returned_ids
 
@@ -202,6 +250,7 @@ def test_admin_get_active_technicians_returns_empty_list(
 # ACCÈS INTERDIT AUX NON-ADMIN
 # ============================================
 
+
 @pytest.mark.parametrize(
     "endpoint",
     [
@@ -244,6 +293,7 @@ def test_non_admin_cannot_access_admin_lists(
 # ============================================
 # ACCÈS NON AUTHENTIFIÉ
 # ============================================
+
 
 @pytest.mark.parametrize(
     "endpoint",

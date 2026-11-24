@@ -34,6 +34,10 @@ class UserNotFoundError(Exception):
     """User Not Found"""
 
 
+class PaginationError(Exception):
+    """Invalid pagination parameters"""
+
+
 class UserInactiveError(Exception):
     """User Inactive"""
 
@@ -502,3 +506,99 @@ class IncidentService:
             category=category,
             priority=priority,
         )
+
+    def paginate_assigned_incidents(
+        self,
+        *,
+        actor_id: int,
+        page: int = 1,
+        page_size: int = 20,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ):
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if actor.role not in (UserRole.ADMIN, UserRole.TECHNICIAN):
+            raise NotEnoughAuthorization(
+                "Vous n'êtes pas autorisé à consulter cette liste d'incidents."
+            )
+
+        if page < 1 or page_size < 1 or page_size > 100:
+            raise PaginationError("Erreur concernant la page")
+
+        total = self.incident_repository.count_by_assignee(
+            assignee_id=actor_id, status=status, priority=priority, category=category
+        )
+
+        total_pages = (total + page_size - 1) // page_size
+
+        incidents = self.incident_repository.list_by_assignee(
+            limit=page_size,
+            offset=(page - 1) * page_size,
+            assignee_id=actor_id,
+            status=status,
+            priority=priority,
+            category=category,
+        )
+
+        return {
+            "items": incidents,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
+
+
+    def paginate_all_incidents(
+        self,
+        *,
+        actor_id: int,
+        page: int = 1,
+        page_size: int = 20,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ):
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur n'existe pas")
+
+        if actor.role is not UserRole.ADMIN:
+            raise NotEnoughAuthorization(
+                "Vous n'êtes pas autorisé à consulter cette liste d'incidents."
+            )
+
+        if page < 1 or page_size < 1 or page_size > 100:
+            raise PaginationError("Erreur concernant la page")
+
+        total = self.incident_repository.count_all(
+             status=status, priority=priority, category=category
+        )
+
+        total_pages = (total + page_size - 1) // page_size
+
+        incidents = self.incident_repository.list_all(
+            limit=page_size,
+            offset=(page - 1) * page_size,
+            status=status,
+            priority=priority,
+            category=category,
+        )
+
+        return {
+            "items": incidents,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }

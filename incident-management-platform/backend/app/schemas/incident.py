@@ -96,3 +96,13 @@ class IncidentHistoryResponse(BaseModel):
     old_value: str | None
     new_value: str | None
     created_at: datetime
+
+
+class PaginatedIncidentsResponse(BaseModel):
+    items: list[IncidentResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool

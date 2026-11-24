@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -23,7 +22,6 @@ from app.services.incident_service import (
     IncidentService,
     UserNotFoundError,
 )
-
 
 # ==========================================================
 # HELPERS
@@ -63,7 +61,7 @@ def create_test_incident(
 
     incident = Incident(
         title=title,
-        description="Incident créé pour les tests API de l'US-13.",
+        description="Incident créé pour les tests API de filtrage et pagination.",
         category=category,
         priority=priority,
         status=IncidentStatus.OPEN,
@@ -88,14 +86,10 @@ def create_test_incident(
     ):
         incident.resolution = "Le problème a été résolu."
 
-        incident.resolved_at = (
-            incident.created_at + timedelta(seconds=1)
-        )
+        incident.resolved_at = incident.created_at + timedelta(seconds=1)
 
     if status == IncidentStatus.CLOSED:
-        incident.closed_at = (
-            incident.created_at + timedelta(seconds=2)
-        )
+        incident.closed_at = incident.created_at + timedelta(seconds=2)
 
     incident.status = status
 
@@ -111,18 +105,12 @@ def get_incidents(
 ):
     return client.get(
         f"/incidents/{endpoint}",
-        params={
-            key: value
-            for key, value in filters.items()
-            if value is not None
-        },
+        params={key: value for key, value in filters.items() if value is not None},
     )
 
 
 def count_audits(db_session: Session) -> int:
-    return db_session.execute(
-        text("SELECT COUNT(*) FROM audit_logs")
-    ).scalar_one()
+    return db_session.execute(text("SELECT COUNT(*) FROM audit_logs")).scalar_one()
 
 
 # ==========================================================
@@ -138,10 +126,7 @@ def filter_dataset(
     other_technician_user: User,
 ):
 
-    base_time = (
-        datetime.now(timezone.utc)
-        - timedelta(minutes=30)
-    )
+    base_time = datetime.now(timezone.utc) - timedelta(minutes=30)
 
     definitions = [
         (
@@ -236,9 +221,7 @@ def filter_dataset(
             status=incident_status,
             priority=priority,
             category=category,
-            created_at=(
-                base_time + timedelta(minutes=index)
-            ),
+            created_at=(base_time + timedelta(minutes=index)),
         )
 
         dataset[label] = incident.id
@@ -325,10 +308,7 @@ def test_assigned_incidents_filter_combinations(
     expected_labels,
 ):
 
-    expected_ids = [
-        filter_dataset[label]
-        for label in reversed(expected_labels)
-    ]
+    expected_ids = [filter_dataset[label] for label in reversed(expected_labels)]
 
     with make_client() as client:
         login(client, technician_user)
@@ -343,28 +323,23 @@ def test_assigned_incidents_filter_combinations(
 
         body = response.json()
 
-        assert isinstance(body, list)
+        assert isinstance(body, dict)
+        assert isinstance(body["items"], list)
+        assert body["total"] == len(expected_ids)
+        assert body["page"] == 1
+        assert body["page_size"] == 20
 
         # Vérifie les résultats, leur nombre et leur tri.
-        assert [
-            incident["id"]
-            for incident in body
-        ] == expected_ids
+        assert [incident["id"] for incident in body["items"]] == expected_ids
 
-        for incident in body:
+        for incident in body["items"]:
 
-            assert (
-                incident["assigned_to_id"]
-                == technician_user.id
-            )
+            assert incident["assigned_to_id"] == technician_user.id
 
             for field_name, expected_value in filters.items():
                 assert incident[field_name] == expected_value
 
-        returned_ids = {
-            incident["id"]
-            for incident in body
-        }
+        returned_ids = {incident["id"] for incident in body["items"]}
 
         # L'incident I appartient à un autre technicien.
         assert filter_dataset["I"] not in returned_ids
@@ -393,10 +368,7 @@ def test_all_incidents_filter_combinations(
     # I et J satisfont tous les filtres de FILTER_CASES.
     expected_labels = expected_labels + "IJ"
 
-    expected_ids = [
-        filter_dataset[label]
-        for label in reversed(expected_labels)
-    ]
+    expected_ids = [filter_dataset[label] for label in reversed(expected_labels)]
 
     with make_client() as client:
         login(client, admin_user)
@@ -411,30 +383,25 @@ def test_all_incidents_filter_combinations(
 
         body = response.json()
 
-        assert isinstance(body, list)
+        assert isinstance(body, dict)
+        assert isinstance(body["items"], list)
+        assert body["total"] == len(expected_ids)
+        assert body["page"] == 1
+        assert body["page_size"] == 20
 
-        assert [
-            incident["id"]
-            for incident in body
-        ] == expected_ids
+        assert [incident["id"] for incident in body["items"]] == expected_ids
 
-        for incident in body:
+        for incident in body["items"]:
             for field_name, expected_value in filters.items():
                 assert incident[field_name] == expected_value
 
-        returned_ids = {
-            incident["id"]
-            for incident in body
-        }
+        returned_ids = {incident["id"] for incident in body["items"]}
 
         assert filter_dataset["I"] in returned_ids
         assert filter_dataset["J"] in returned_ids
 
         # L'administrateur voit aussi les incidents non assignés.
-        assert any(
-            incident["assigned_to_id"] is None
-            for incident in body
-        )
+        assert any(incident["assigned_to_id"] is None for incident in body["items"])
 
 
 # ==========================================================
@@ -452,7 +419,6 @@ def test_all_incidents_filter_combinations(
 )
 def test_filters_return_empty_list(
     request: pytest.FixtureRequest,
-    filter_dataset,
     endpoint,
     actor_fixture,
 ):
@@ -471,7 +437,11 @@ def test_filters_return_empty_list(
         )
 
         assert response.status_code == 200, response.text
-        assert response.json() == []
+        body = response.json()
+
+        assert body["items"] == []
+        assert body["total"] == 0
+        assert body["total_pages"] == 0
 
 
 # ==========================================================
@@ -482,7 +452,6 @@ def test_filters_return_empty_list(
 
 def test_admin_can_access_assigned_endpoint(
     admin_user: User,
-    filter_dataset,
 ):
 
     # Aucun incident du dataset n'est assigné à l'admin.
@@ -498,7 +467,11 @@ def test_admin_can_access_assigned_endpoint(
         )
 
         assert response.status_code == 200, response.text
-        assert response.json() == []
+        body = response.json()
+
+        assert body["items"] == []
+        assert body["total"] == 0
+        assert body["total_pages"] == 0
 
 
 # ==========================================================
@@ -529,7 +502,6 @@ def test_admin_can_access_assigned_endpoint(
 )
 def test_unauthorized_user_cannot_filter_incidents(
     request: pytest.FixtureRequest,
-    filter_dataset,
     endpoint,
     actor_fixture,
 ):
@@ -633,10 +605,7 @@ def test_invalid_filter_returns_422(
 
         # Vérifie que FastAPI signale bien
         # le Query Parameter invalide.
-        assert any(
-            error["loc"] == ["query", field_name]
-            for error in body["detail"]
-        )
+        assert any(error["loc"] == ["query", field_name] for error in body["detail"])
 
 
 # ==========================================================
@@ -669,10 +638,7 @@ def test_filter_resolved_and_closed_incidents(
     incident_status,
 ):
 
-    base_time = (
-        datetime.now(timezone.utc)
-        - timedelta(minutes=10)
-    )
+    base_time = datetime.now(timezone.utc) - timedelta(minutes=10)
 
     resolved_incident = create_test_incident(
         db_session,
@@ -728,13 +694,11 @@ def test_filter_resolved_and_closed_incidents(
 
         body = response.json()
 
-        assert len(body) == 1
-        assert body[0]["id"] == expected_id
+        assert len(body["items"]) == 1
+        assert body["total"] == 1
+        assert body["items"][0]["id"] == expected_id
 
-        assert (
-            body[0]["status"]
-            == incident_status.value
-        )
+        assert body["items"][0]["status"] == incident_status.value
 
 
 # ==========================================================
@@ -758,7 +722,6 @@ def test_technician_cannot_override_assignee_id(
                 "status": "OPEN",
                 "priority": "HIGH",
                 "category": "SECURITY",
-
                 # Tentative de récupération des incidents
                 # d'un autre technicien.
                 "assignee_id": other_technician_user.id,
@@ -771,10 +734,7 @@ def test_technician_cannot_override_assignee_id(
 
         body = response.json()
 
-        returned_ids = [
-            incident["id"]
-            for incident in body
-        ]
+        returned_ids = [incident["id"] for incident in body["items"]]
 
         assert returned_ids == [filter_dataset["A"]]
 
@@ -782,8 +742,7 @@ def test_technician_cannot_override_assignee_id(
         assert filter_dataset["J"] not in returned_ids
 
         assert all(
-            incident["assigned_to_id"] == technician_user.id
-            for incident in body
+            incident["assigned_to_id"] == technician_user.id for incident in body["items"]
         )
 
 
@@ -799,12 +758,12 @@ def test_technician_cannot_override_assignee_id(
         (
             "assigned",
             "technician_user",
-            "list_assigned_incidents",
+            "paginate_assigned_incidents",
         ),
         (
             "all",
             "admin_user",
-            "list_all_incidents",
+            "paginate_all_incidents",
         ),
     ],
 )
@@ -819,9 +778,7 @@ def test_user_not_found_returns_404(
     actor = request.getfixturevalue(actor_fixture)
 
     def missing_user(*args, **kwargs):
-        raise UserNotFoundError(
-            "Utilisateur inexistant"
-        )
+        raise UserNotFoundError("Utilisateur inexistant")
 
     with make_client() as client:
         login(client, actor)
@@ -875,9 +832,7 @@ def test_database_error_returns_500(
     actor = request.getfixturevalue(actor_fixture)
 
     def failing_repository(*args, **kwargs):
-        raise SQLAlchemyError(
-            "Erreur PostgreSQL simulée"
-        )
+        raise SQLAlchemyError("Erreur PostgreSQL simulée")
 
     with make_client() as client:
         login(client, actor)
@@ -921,13 +876,9 @@ def test_filtering_does_not_modify_database(
 
     actor = request.getfixturevalue(actor_fixture)
 
-    history_repository = IncidentHistoryRepository(
-        db_session
-    )
+    history_repository = IncidentHistoryRepository(db_session)
 
-    incident_repository = IncidentRepository(
-        db_session
-    )
+    incident_repository = IncidentRepository(db_session)
 
     def get_incident_snapshot():
 
@@ -935,9 +886,7 @@ def test_filtering_does_not_modify_database(
 
         for incident_id in filter_dataset.values():
 
-            incident = incident_repository.get_by_id(
-                incident_id=incident_id
-            )
+            incident = incident_repository.get_by_id(incident_id=incident_id)
 
             assert incident is not None
 
@@ -964,9 +913,7 @@ def test_filtering_does_not_modify_database(
 
         for incident_id in filter_dataset.values():
 
-            events = history_repository.list_by_incident(
-                incident_id=incident_id
-            )
+            events = history_repository.list_by_incident(incident_id=incident_id)
 
             snapshot[incident_id] = [
                 (

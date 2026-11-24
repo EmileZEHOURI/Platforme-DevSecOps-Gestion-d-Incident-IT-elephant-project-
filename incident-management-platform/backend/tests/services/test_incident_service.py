@@ -209,6 +209,17 @@ def test_recuperation_list_assigned_incident() -> None:
 
     expected_incidents = create_incident_list()
 
+    # Simulation d'un technicien authentifié.
+    technician = User(
+        id=1,
+        email="technician@test.com",
+        password_hash="password_hash",
+        full_name="Technicien Test",
+        role=UserRole.TECHNICIAN,
+        is_active=True,
+    )
+
+    user_repository.get_by_id.return_value = technician
     incident_repository.list_by_assignee.return_value = expected_incidents
 
     service = IncidentService(
@@ -218,10 +229,25 @@ def test_recuperation_list_assigned_incident() -> None:
         user_repository,
     )
 
-    result = service.list_assigned_incidents(assigned_to_id=1)
-    incident_repository.list_by_assignee.assert_called_once_with(assigned_to_id=1)
+    # US-13 : identification par actor_id.
+    result = service.list_assigned_incidents(actor_id=1)
+
+    # L'utilisateur doit être recherché.
+    user_repository.get_by_id.assert_called_once_with(user_id=1)
+
+    # Le repository utilise l'identité authentifiée.
+    incident_repository.list_by_assignee.assert_called_once_with(
+        assignee_id=1,
+        status=None,
+        priority=None,
+        category=None,
+    )
 
     assert result is expected_incidents
+    assert len(result) == 3
+
+    # Aucun autre utilisateur ne doit apparaître.
+    assert all(incident.assigned_to_id == technician.id for incident in result)
 
 
 def test_list_assigned_incidents_returns_empty_list() -> None:
@@ -232,6 +258,17 @@ def test_list_assigned_incidents_returns_empty_list() -> None:
 
     expected_incidents = []
 
+    # Technicien existant, sans incident assigné.
+    technician = User(
+        id=2,
+        email="technician2@test.com",
+        password_hash="password_hash",
+        full_name="Technicien Sans Incident",
+        role=UserRole.TECHNICIAN,
+        is_active=True,
+    )
+
+    user_repository.get_by_id.return_value = technician
     incident_repository.list_by_assignee.return_value = expected_incidents
 
     service = IncidentService(
@@ -241,10 +278,19 @@ def test_list_assigned_incidents_returns_empty_list() -> None:
         user_repository,
     )
 
-    result = service.list_assigned_incidents(assigned_to_id=2)
-    incident_repository.list_by_assignee.assert_called_once_with(assigned_to_id=2)
+    result = service.list_assigned_incidents(actor_id=2)
+
+    user_repository.get_by_id.assert_called_once_with(user_id=2)
+
+    incident_repository.list_by_assignee.assert_called_once_with(
+        assignee_id=2,
+        status=None,
+        priority=None,
+        category=None,
+    )
 
     assert result is expected_incidents
+    assert result == []
 
 
 def test_initial_assignation() -> None:

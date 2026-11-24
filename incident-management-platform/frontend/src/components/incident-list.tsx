@@ -1,6 +1,7 @@
 "use client";
 
 import { IncidentFiltersBar, hasIncidentFilters, filterErrors } from "@/components/incident-filters-bar";
+import { IncidentPagination } from "@/components/incident-pagination";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useIncidentResolve } from "@/components/incident-resolve";
@@ -11,28 +12,37 @@ import { IncidentTable } from "@/components/incident-table";
 import { ApiError } from "@/lib/api";
 import { canViewAssignedIncidents } from "@/lib/permissions";
 import { listIncidents, listAssignedIncidents } from "@/services/incident.service";
-import type { IncidentFilters, IncidentResponse } from "@/types/incident";
+import type { IncidentFilters, IncidentResponse, PaginatedIncidentsResponse } from "@/types/incident";
 
 type IncidentScope = "created" | "assigned";
 
 type ListState =
   | { status: "loading" }
-  | { status: "success"; incidents: IncidentResponse[] }
+  | { status: "success"; incidents: IncidentResponse[]; pagination?: PaginatedIncidentsResponse }
   | { status: "error"; message: string; code?: number };
 
 function UserIncidentList({ scope }: { scope: IncidentScope }) {
   const assigned = scope === "assigned";
   const [state, setState] = useState<ListState>({ status: "loading" });
   const [filters, setFilters] = useState<IncidentFilters>({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-    const request = assigned ? listAssignedIncidents(filters, controller.signal) : listIncidents(controller.signal);
-    void request.then(incidents => {
-      if (active) setState({ status: "success", incidents });
-    }).catch(error => {
+    const request = assigned
+      ? listAssignedIncidents({ ...filters, page, page_size: pageSize }, controller.signal).then(data => {
+        if (!active) return;
+        const lastPage = Math.max(1, data.total_pages);
+        if (data.items.length === 0 && page > lastPage) { setPage(lastPage); return; }
+        setState({ status: "success", incidents: data.items, pagination: data });
+      })
+      : listIncidents(controller.signal).then(incidents => {
+        if (active) setState({ status: "success", incidents });
+      });
+    void request.catch(error => {
       if (active) setState({
         status: "error",
         message: error instanceof Error ? error.message : "Impossible de charger vos incidents.",
@@ -40,11 +50,13 @@ function UserIncidentList({ scope }: { scope: IncidentScope }) {
       });
     });
     return () => { active = false; controller.abort(); };
-  }, [attempt, assigned, filters]);
+  }, [attempt, assigned, filters, page, pageSize]);
 
   function reload() { setState({ status: "loading" }); setAttempt(value => value + 1); }
 
-  function changeFilters(next: IncidentFilters) { setState({ status: "loading" }); setFilters(next); }
+  function changeFilters(next: IncidentFilters) { setState({ status: "loading" }); setFilters(next); setPage(1); }
+  function changePage(next: number) { setState({ status: "loading" }); setPage(next); }
+  function changePageSize(next: number) { setState({ status: "loading" }); setPageSize(next); setPage(1); }
 
   const start = useIncidentStart(updated => {
     if (assigned) { reload(); return; }
@@ -62,7 +74,7 @@ function UserIncidentList({ scope }: { scope: IncidentScope }) {
         <h2 id="incident-list-heading">{assigned ? "Mes incidents assignés" : "Mes incidents"}</h2>
         <Button variant="ghost" disabled={state.status === "loading"} onClick={reload}>Actualiser ↻</Button>
       </div>
-      {assigned && <IncidentFiltersBar filters={filters} onChange={changeFilters} count={state.status === "success" ? state.incidents.length : undefined} />}
+      {assigned && <IncidentFiltersBar filters={filters} onChange={changeFilters} count={state.status === "success" ? state.pagination?.total : undefined} />}
       {state.status === "loading" && <div className="incident-list-loading" role="status"><span className="spinner" aria-hidden="true" />Chargement de vos incidents…</div>}
       {state.status === "error" && <StatePanel error
         title={state.code === 401 ? "Session expirée" : state.code === 403 ? "Accès refusé" : "Impossible de charger les incidents"}
@@ -76,9 +88,10 @@ function UserIncidentList({ scope }: { scope: IncidentScope }) {
           <Link className="button button-secondary" href="/dashboard/incidents/new">Créer mon premier incident</Link>
         </StatePanel>
         : <>
-          <p className="incident-list-summary" role="status">{state.incidents.length} incident{state.incidents.length > 1 ? "s" : ""} · {assigned ? "Dans votre file de travail" : "Du plus récent au plus ancien"}</p>
+          {!assigned && <p className="incident-list-summary" role="status">{state.incidents.length} incident{state.incidents.length > 1 ? "s" : ""} · {assigned ? "Dans votre file de travail" : "Du plus récent au plus ancien"}</p>}
           <IncidentTable incidents={state.incidents} action={assigned ? i => <>{start.action(i)}{resolve.action(i)}</> : undefined} />
         </>)}
+      {assigned && <IncidentPagination data={state.status === "success" ? state.pagination : undefined} pageSize={pageSize} onPageChange={changePage} onPageSizeChange={changePageSize} />}
     </section>
   );
 }

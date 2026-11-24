@@ -2,7 +2,7 @@ import { notifyIncidentUpdate } from "@/lib/incident-updates";
 import type { IncidentHistoryEvent } from "@/types/incident-history";
 import type { User } from "@/types/auth";
 import { api } from "@/lib/api";
-import type { IncidentCreate, IncidentPriority, IncidentResponse, IncidentFilters } from "@/types/incident";
+import type { IncidentCreate, IncidentPriority, IncidentResponse, IncidentListParams, PaginatedIncidentsResponse } from "@/types/incident";
 
 export function getIncident(id: string, signal?: AbortSignal): Promise<IncidentResponse> {
   return api<IncidentResponse>(`/incidents/${encodeURIComponent(id)}`, {
@@ -31,25 +31,25 @@ export function createIncident(data: IncidentCreate): Promise<IncidentResponse> 
   });
 }
 
-function filteredIncidents(path: string, filters: IncidentFilters, signal?: AbortSignal) {
-  const params = new URLSearchParams();
+function filteredIncidents(path: string, filters: IncidentListParams, signal?: AbortSignal) {
+  const params = new URLSearchParams({ page: String(filters.page ?? 1), page_size: String(filters.page_size ?? 20) });
   for (const key of ["status", "priority", "category"] as const) {
     if (filters[key]) params.set(key, filters[key]);
   }
   const query = params.toString();
-  return api<IncidentResponse[]>(`${path}${query ? `?${query}` : ""}`, {
+  return api<PaginatedIncidentsResponse>(`${path}${query ? `?${query}` : ""}`, {
     method: "GET",
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12000)]) : undefined,
   });
 }
-export function listAssignedIncidents(filters?: IncidentFilters, signal?: AbortSignal): Promise<IncidentResponse[]>;
-export function listAssignedIncidents(signal?: AbortSignal): Promise<IncidentResponse[]>;
-export function listAssignedIncidents(filters: IncidentFilters | AbortSignal = {}, signal?: AbortSignal): Promise<IncidentResponse[]> {
+export function listAssignedIncidents(filters?: IncidentListParams, signal?: AbortSignal): Promise<PaginatedIncidentsResponse>;
+export function listAssignedIncidents(signal?: AbortSignal): Promise<PaginatedIncidentsResponse>;
+export function listAssignedIncidents(filters: IncidentListParams | AbortSignal = {}, signal?: AbortSignal): Promise<PaginatedIncidentsResponse> {
   return filters instanceof AbortSignal
     ? filteredIncidents("/incidents/assigned", {}, filters)
     : filteredIncidents("/incidents/assigned", filters, signal);
 }
-export function listAllIncidents(filters: IncidentFilters = {}, signal?: AbortSignal): Promise<IncidentResponse[]> {
+export function listAllIncidents(filters: IncidentListParams = {}, signal?: AbortSignal): Promise<PaginatedIncidentsResponse> {
   return filteredIncidents("/incidents/all", filters, signal);
 }
 export const listTechnicians = () => api<User[]>("/users/technicians");
