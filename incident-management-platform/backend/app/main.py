@@ -10,11 +10,13 @@ from app.api.routes.incidents import router as incidents_router
 from app.core.database import get_db
 
 from app.api.routes.users import router as users_router
+from app.api.routes.audit_logs import router as audit_router
 
 app = FastAPI(title="Incident Management API", version="0.1.0")
 app.include_router(auth_router)
 app.include_router(incidents_router)
 app.include_router(users_router)
+app.include_router(audit_router)
 
 allowed_origins = [
     "http://localhost:3000",

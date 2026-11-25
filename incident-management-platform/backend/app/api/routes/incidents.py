@@ -10,7 +10,6 @@ from app.models.enums import (
     IncidentCategory,
     IncidentPriority,
     IncidentStatus,
-    UserRole,
 )
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
