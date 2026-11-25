@@ -9,7 +9,7 @@ import { logout } from "@/services/auth.service";
 import { ApiError } from "@/lib/api";
 import { canViewAssignedIncidents } from "@/lib/permissions";
 
-const navigation = [ { href: "/dashboard", title: "Vue d’ensemble", icon: "▦" }, { href: "/dashboard/incidents", title: "Incidents", icon: "◈" }, { href: "/dashboard/incidents/assigned", title: "Mes incidents assignés", icon: "≡" }, { href: "/dashboard/admin/incidents", title: "Gestion des incidents", icon: "▤", adminOnly: true }, { href: "/dashboard/services", title: "État des services", icon: "◉" }, { href: "/dashboard/account", title: "Mon compte", icon: "◷" } ];
+const navigation = [ { href: "/dashboard", title: "Vue d’ensemble", icon: "▦" }, { href: "/dashboard/incidents", title: "Incidents", icon: "◈" }, { href: "/dashboard/incidents/assigned", title: "Mes incidents assignés", icon: "≡" }, { href: "/dashboard/admin/incidents", title: "Gestion des incidents", icon: "▤", adminOnly: true }, { href: "/dashboard/admin/users", title: "Utilisateurs", icon: "♙", adminOnly: true }, { href: "/dashboard/services", title: "État des services", icon: "◉" }, { href: "/dashboard/account", title: "Mon compte", icon: "◷" } ];
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, error, refresh } = useAuth();
   const pathname = usePathname();

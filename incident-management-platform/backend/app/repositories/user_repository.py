@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.models.enums import UserRole
@@ -56,6 +56,56 @@ class UserRepository:
         )
 
         self.db.add(user)
+        self.db.flush()
+
+        return user
+
+    
+
+    def list_all(
+            self,
+            *,
+            is_active: bool | None = None,
+            role: UserRole | None = None,
+    ) -> list[User]:
+
+                statement = select(User)
+        
+                statement = self._apply_filters_user(
+                    statement, role=role, is_active= is_active
+                )
+        
+                statement = statement.order_by(
+                    User.id.asc(),
+                )
+        
+                return list(self.db.scalars(statement).all())
+        
+    def _apply_filters_user(
+            self,
+            statement: Select[tuple[User]],
+            *,
+            role: UserRole | None = None,
+            is_active : bool | None = None,
+        ) -> Select[tuple[User]]:
+    
+            if role is not None:
+                statement = statement.where(User.role == role)
+    
+            if is_active is not None:
+                statement = statement.where(User.is_active == is_active)
+
+            return statement
+
+    def update_is_active(
+    self,
+    *,
+    user: User,
+    is_active: bool,
+) -> User:
+
+        user.is_active = is_active
+
         self.db.flush()
 
         return user

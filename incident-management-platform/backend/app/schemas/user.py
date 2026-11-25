@@ -16,3 +16,9 @@ class UserResponse(BaseModel):
     role: UserRole
     is_active: bool
     created_at: datetime
+
+
+class UserActivationUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool

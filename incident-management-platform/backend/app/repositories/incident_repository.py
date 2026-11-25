@@ -175,3 +175,23 @@ class IncidentRepository:
         )
 
         return self.db.scalar(statement) or 0
+
+    def count_active_by_assignee(
+        self,
+        *,
+        assignee_id: int,
+    ) -> int:
+        statement = (
+            select(Incident)
+            .where(Incident.assigned_to_id == assignee_id)
+            .where(
+                Incident.status.in_([IncidentStatus.OPEN, IncidentStatus.IN_PROGRESS])
+            )
+        )
+
+        statement = statement.with_only_columns(
+            func.count(Incident.id),
+            maintain_column_froms=True,
+        )
+
+        return self.db.scalar(statement) or 0
