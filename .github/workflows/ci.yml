@@ -15,7 +15,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: backend
+        working-directory: incident-management-platform/backend
 
     services:
       postgres:
@@ -58,7 +58,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: backend/uv.lock
+          cache-dependency-glob: incident-management-platform/backend/uv.lock
 
       - name: Installer Python 3.14
         run: uv python install 3.14
@@ -81,7 +81,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: frontend
+        working-directory: incident-management-platform/frontend
 
     steps:
       - name: Recuperer le code
@@ -92,7 +92,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: incident-management-platform/frontend/package-lock.json
 
       - name: Installer les dependances
         run: npm ci
