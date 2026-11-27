@@ -1,0 +1,6 @@
+
+Running 1 test using 1 worker
+
+  ok 1 frontend\.ghcr-test-d53a3e6f\lifecycle.spec.ts:39:1 › real lifecycle with permissions, CSRF and audit (6.2s)
+
+  1 passed (8.6s)

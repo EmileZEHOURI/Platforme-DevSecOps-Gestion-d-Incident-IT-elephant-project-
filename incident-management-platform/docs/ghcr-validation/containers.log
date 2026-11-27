@@ -1,0 +1,255 @@
+backend-1   | INFO:     Started server process [1]
+db-1        | The files belonging to this database system will be owned by user "postgres".
+migrate-1   | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+migrate-1   | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+redis-1     | 1:C 27 Nov 2026 18:21:23.818 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+migrate-1   | INFO  [alembic.runtime.migration] Running upgrade  -> b8ef9b6eac65, create initial schema
+migrate-1   | INFO  [alembic.runtime.migration] Running upgrade b8ef9b6eac65 -> b7920b10f87c, message
+migrate-1   | INFO  [alembic.runtime.migration] Running upgrade b7920b10f87c -> c41f9a2d7e10, Durable JWT revocations.
+frontend-1  | 
+backend-1   | INFO:     Waiting for application startup.
+backend-1   | INFO:     Application startup complete.
+backend-1   | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+backend-1   | INFO:     127.0.0.1:33974 - "GET /health HTTP/1.1" 200 OK
+migrate-1   | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+migrate-1   | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+backend-1   | INFO:     127.0.0.1:33980 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.1:46546 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.1:46560 - "GET /health/database HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:33986 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:34970 - "GET /health HTTP/1.1" 200 OK
+frontend-1  | > frontend@0.1.0 start
+frontend-1  | > next start
+db-1        | This user must also own the server process.
+db-1        | 
+db-1        | The database cluster will be initialized with locale "en_US.utf8".
+db-1        | The default database encoding has accordingly been set to "UTF8".
+backend-1   | INFO:     172.19.0.5:33910 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:34974 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:34984 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+db-1        | The default text search configuration will be set to "english".
+db-1        | 
+db-1        | Data page checksums are disabled.
+db-1        | 
+db-1        | fixing permissions on existing directory /var/lib/postgresql/data ... ok
+db-1        | creating subdirectories ... ok
+db-1        | selecting dynamic shared memory implementation ... posix
+db-1        | selecting default "max_connections" ... 100
+db-1        | selecting default "shared_buffers" ... 128MB
+db-1        | selecting default time zone ... UTC
+db-1        | creating configuration files ... ok
+db-1        | running bootstrap script ... ok
+db-1        | sh: locale: not found
+db-1        | 2026-11-27 18:21:24.483 UTC [35] WARNING:  no usable system locales were found
+db-1        | performing post-bootstrap initialization ... ok
+backend-1   | INFO:     172.19.0.5:33916 - "POST /auth/login HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33924 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /incidents?page=1&page_size=10 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33930 - "GET /health/database HTTP/1.1" 200 OK
+redis-1     | 1:C 27 Nov 2026 18:21:23.818 * Redis version=7.4.12, bits=64, commit=00000000, modified=0, pid=1, just started
+redis-1     | 1:C 27 Nov 2026 18:21:23.818 * Configuration loaded
+backend-1   | INFO:     172.19.0.5:33924 - "GET /incidents?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33938 - "GET /incidents?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33950 - "GET /incidents?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+redis-1     | 1:M 27 Nov 2026 18:21:23.819 * monotonic clock: POSIX clock_gettime
+redis-1     | 1:M 27 Nov 2026 18:21:23.825 * Running mode=standalone, port=6379.
+redis-1     | 1:M 27 Nov 2026 18:21:23.826 * Server initialized
+frontend-1  | 
+frontend-1  | ▲ Next.js 16.4.6
+frontend-1  | - Local:         http://localhost:3000
+frontend-1  | - Network:       http://172.19.0.5:3000
+db-1        | syncing data to disk ... ok
+db-1        | 
+redis-1     | 1:M 27 Nov 2026 18:21:23.827 * Ready to accept connections tcp
+redis-1     | 1:signal-handler (1795803724) Received SIGTERM scheduling shutdown...
+redis-1     | 1:M 27 Nov 2026 18:22:04.383 * User requested shutdown...
+redis-1     | 1:M 27 Nov 2026 18:22:04.396 # Redis is now ready to exit, bye bye...
+redis-1     | 1:C 27 Nov 2026 18:22:04.781 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+redis-1     | 1:C 27 Nov 2026 18:22:04.781 * Redis version=7.4.12, bits=64, commit=00000000, modified=0, pid=1, just started
+redis-1     | 1:C 27 Nov 2026 18:22:04.781 * Configuration loaded
+redis-1     | 1:M 27 Nov 2026 18:22:04.781 * monotonic clock: POSIX clock_gettime
+redis-1     | 1:M 27 Nov 2026 18:22:04.785 * Running mode=standalone, port=6379.
+redis-1     | 1:M 27 Nov 2026 18:22:04.785 * Server initialized
+redis-1     | 1:M 27 Nov 2026 18:22:04.785 * Ready to accept connections tcp
+backend-1   | INFO:     172.19.0.5:33956 - "GET /incidents?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33972 - "GET /incidents?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33990 - "GET /incidents?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /incidents?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /incidents?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "POST /auth/logout HTTP/1.1" 403 Forbidden
+backend-1   | INFO:     172.19.0.5:34018 - "POST /auth/logout HTTP/1.1" 403 Forbidden
+backend-1   | INFO:     172.19.0.5:34018 - "POST /auth/logout HTTP/1.1" 403 Forbidden
+backend-1   | INFO:     172.19.0.5:34018 - "POST /auth/logout HTTP/1.1" 403 Forbidden
+backend-1   | INFO:     172.19.0.5:34018 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "POST /incidents HTTP/1.1" 201 Created
+backend-1   | INFO:     172.19.0.5:34018 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /health/database HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /incidents?page=1&page_size=10 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33990 - "GET /incidents?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33972 - "GET /incidents?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /incidents?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents/1 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents/1/history HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "POST /incidents/1/comments HTTP/1.1" 201 Created
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents/1/history HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+backend-1   | INFO:     172.19.0.5:34018 - "POST /auth/login HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33972 - "GET /health/database HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents/assigned?page=1&page_size=10 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /incidents/assigned?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/assigned?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33990 - "GET /incidents/assigned?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33972 - "GET /incidents/assigned?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33950 - "GET /incidents/1 HTTP/1.1" 404 Not Found
+backend-1   | INFO:     172.19.0.5:33986 - "GET /incidents/assigned?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /incidents/1 HTTP/1.1" 404 Not Found
+backend-1   | INFO:     172.19.0.5:33986 - "GET /incidents/1/history HTTP/1.1" 403 Forbidden
+backend-1   | INFO:     172.19.0.5:33986 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+backend-1   | INFO:     172.19.0.5:33986 - "POST /auth/login HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:58124 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33950 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33972 - "GET /health/database HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33986 - "GET /incidents/all?page=1&page_size=10 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33990 - "GET /incidents/all?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33972 - "GET /incidents/all?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33950 - "GET /incidents/all?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/all?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /incidents/all?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents/all?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33938 - "GET /incidents/all?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33956 - "GET /incidents/all?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33930 - "GET /incidents/all?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33924 - "GET /incidents/all?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33924 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33924 - "GET /incidents/all?page=1&page_size=20 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:46804 - "GET /auth/me HTTP/1.1" 200 OK
+frontend-1  | ✓ Ready in 220ms
+frontend-1  | ✓ Running next.config.ts took 130ms
+db-1        | 
+db-1        | Success. You can now start the database server using:
+db-1        | 
+db-1        |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+db-1        | 
+db-1        | initdb: warning: enabling "trust" authentication for local connections
+backend-1   | INFO:     172.19.0.5:46808 - "GET /users/technicians HTTP/1.1" 404 Not Found
+db-1        | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+backend-1   | INFO:     172.19.0.5:46804 - "GET /auth/technicians HTTP/1.1" 200 OK
+db-1        | waiting for server to start....2026-11-27 18:21:25.642 UTC [41] LOG:  starting PostgreSQL 17.12 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+backend-1   | INFO:     172.19.0.5:33924 - "PATCH /incidents/1/assignment HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:25.644 UTC [41] LOG:  listening on Unix socket "/run/postgresql/.s.PGSQL.5432"
+frontend-1  | 
+frontend-1  | > frontend@0.1.0 start
+frontend-1  | > next start
+backend-1   | INFO:     172.19.0.5:46804 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:46808 - "GET /users/technicians HTTP/1.1" 404 Not Found
+frontend-1  | 
+backend-1   | INFO:     172.19.0.5:33924 - "GET /incidents/all?page=1&page_size=20 HTTP/1.1" 200 OK
+frontend-1  | ▲ Next.js 16.4.6
+frontend-1  | - Local:         http://localhost:3000
+frontend-1  | - Network:       http://172.19.0.5:3000
+backend-1   | INFO:     172.19.0.5:46804 - "GET /auth/technicians HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33930 - "GET /incidents/1 HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:25.654 UTC [44] LOG:  database system was shut down at 2026-11-27 18:21:25 UTC
+frontend-1  | ✓ Ready in 198ms
+frontend-1  | ✓ Running next.config.ts took 57ms
+backend-1   | INFO:     172.19.0.5:33930 - "GET /auth/me HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:25.661 UTC [41] LOG:  database system is ready to accept connections
+backend-1   | INFO:     172.19.0.5:33930 - "GET /incidents/1 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33930 - "GET /incidents/1/history HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33930 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33950 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33930 - "GET /incidents/assigned?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+db-1        |  done
+db-1        | server started
+backend-1   | INFO:     172.19.0.5:33938 - "GET /incidents/assigned?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+db-1        | CREATE DATABASE
+backend-1   | INFO:     172.19.0.5:33924 - "GET /incidents/assigned?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+db-1        | 
+db-1        | 
+db-1        | /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+db-1        | 
+db-1        | waiting for server to shut down...2026-11-27 18:21:25.848 UTC [41] LOG:  received fast shutdown request
+db-1        | .2026-11-27 18:21:25.851 UTC [41] LOG:  aborting any active transactions
+db-1        | 2026-11-27 18:21:25.853 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+db-1        | 2026-11-27 18:21:25.853 UTC [42] LOG:  shutting down
+db-1        | 2026-11-27 18:21:25.856 UTC [42] LOG:  checkpoint starting: shutdown immediate
+backend-1   | INFO:     172.19.0.5:33956 - "GET /incidents/assigned?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34018 - "GET /incidents/assigned?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /health/database HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33916 - "GET /incidents/assigned?page=1&page_size=10 HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:26.063 UTC [42] LOG:  checkpoint complete: wrote 935 buffers (5.7%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.046 s, sync=0.153 s, total=0.210 s; sync files=301, longest=0.006 s, average=0.001 s; distance=4339 kB, estimate=4339 kB; lsn=0/1942C30, redo lsn=0/1942C30
+db-1        | 2026-11-27 18:21:26.071 UTC [41] LOG:  database system is shut down
+db-1        |  done
+db-1        | server stopped
+db-1        | 
+backend-1   | INFO:     172.19.0.5:33986 - "GET /incidents/assigned?page=1&page_size=1&status=OPEN HTTP/1.1" 200 OK
+db-1        | PostgreSQL init process complete; ready for start up.
+db-1        | 
+backend-1   | INFO:     172.19.0.5:33990 - "GET /incidents/assigned?page=1&page_size=1&status=OPEN&priority=CRITICAL HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:26.200 UTC [1] LOG:  starting PostgreSQL 17.12 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+backend-1   | INFO:     172.19.0.5:33972 - "GET /incidents/assigned?page=1&page_size=1&status=IN_PROGRESS HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:33950 - "GET /incidents/assigned?page=1&page_size=1&status=IN_PROGRESS&priority=CRITICAL HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:26.202 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+db-1        | 2026-11-27 18:21:26.202 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/assigned?page=1&page_size=1&status=RESOLVED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:26.207 UTC [1] LOG:  listening on Unix socket "/run/postgresql/.s.PGSQL.5432"
+db-1        | 2026-11-27 18:21:26.214 UTC [57] LOG:  database system was shut down at 2026-11-27 18:21:26 UTC
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/assigned?page=1&page_size=20 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "PATCH /incidents/1/status HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/assigned?page=1&page_size=20 HTTP/1.1" 200 OK
+db-1        | 2026-11-27 18:21:26.222 UTC [1] LOG:  database system is ready to accept connections
+backend-1   | INFO:     172.19.0.5:34004 - "PATCH /incidents/1/resolve HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/assigned?page=1&page_size=20 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/1 HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/1/history HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "PATCH /incidents/1/close HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /incidents/1/history HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /users HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /audit-logs?page=1&page_size=20&event_type=INCIDENT_CLOSED HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /users HTTP/1.1" 403 Forbidden
+backend-1   | INFO:     172.19.0.5:34004 - "POST /auth/logout HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:58134 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "POST /auth/login HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "POST /incidents HTTP/1.1" 201 Created
+backend-1   | INFO:     172.19.0.5:34004 - "POST /auth/logout HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:34004 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+backend-1   | INFO:     127.0.0.1:58142 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     Shutting down
+backend-1   | INFO:     Waiting for application shutdown.
+backend-1   | INFO:     Application shutdown complete.
+backend-1   | INFO:     Finished server process [1]
+backend-1   | INFO:     Started server process [1]
+backend-1   | INFO:     Waiting for application startup.
+backend-1   | INFO:     Application startup complete.
+backend-1   | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+backend-1   | INFO:     127.0.0.1:38266 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:44166 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     127.0.0.1:44174 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:45332 - "GET /health HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:45340 - "GET /auth/me HTTP/1.1" 401 Unauthorized
+backend-1   | INFO:     172.19.0.5:45340 - "POST /auth/login HTTP/1.1" 200 OK
+backend-1   | INFO:     172.19.0.5:45340 - "GET /incidents/2 HTTP/1.1" 200 OK

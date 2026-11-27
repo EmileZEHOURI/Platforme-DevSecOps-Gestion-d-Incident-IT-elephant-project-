@@ -1,0 +1,141 @@
+{
+  "services": {
+    "db": {
+      "image": "postgres:17-alpine",
+      "environment": {
+        "POSTGRES_USER": "ghcr_test",
+        "POSTGRES_PASSWORD": "${GHCR_TEST_DB_PASSWORD}",
+        "POSTGRES_DB": "incident_ghcr_test"
+      },
+      "volumes": [
+        "postgres_data:/var/lib/postgresql/data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U ghcr_test -d incident_ghcr_test"
+        ],
+        "interval": "3s",
+        "timeout": "4s",
+        "retries": 30
+      }
+    },
+    "redis": {
+      "image": "redis:7-alpine",
+      "command": [
+        "redis-server",
+        "--save",
+        "",
+        "--appendonly",
+        "no"
+      ],
+      "volumes": [
+        "redis_data:/data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ],
+        "interval": "3s",
+        "timeout": "4s",
+        "retries": 30
+      }
+    },
+    "migrate": {
+      "image": "ghcr.io/emilezehouri/incident-backend@sha256:6f3d05ca3ef0cb209e582d9c04c92905f53219630a50ea680fef6bb024f6fd96",
+      "environment": {
+        "ENVIRONMENT": "development",
+        "DATABASE_URL": "postgresql+psycopg://ghcr_test:${GHCR_TEST_DB_PASSWORD}@db:5432/incident_ghcr_test",
+        "REDIS_URL": "redis://redis:6379/0",
+        "JWT_SECRET_KEY": "${GHCR_TEST_JWT}",
+        "JWT_REVOCATION_ENABLED": "true",
+        "LOGIN_RATE_LIMIT_ENABLED": "true",
+        "CSRF_PROTECTION_ENABLED": "true",
+        "FRONTEND_ORIGIN": "http://localhost:3018"
+      },
+      "depends_on": {
+        "db": {
+          "condition": "service_healthy"
+        }
+      },
+      "command": [
+        "alembic",
+        "upgrade",
+        "head"
+      ],
+      "restart": "no"
+    },
+    "backend": {
+      "image": "ghcr.io/emilezehouri/incident-backend@sha256:6f3d05ca3ef0cb209e582d9c04c92905f53219630a50ea680fef6bb024f6fd96",
+      "environment": {
+        "ENVIRONMENT": "development",
+        "DATABASE_URL": "postgresql+psycopg://ghcr_test:${GHCR_TEST_DB_PASSWORD}@db:5432/incident_ghcr_test",
+        "REDIS_URL": "redis://redis:6379/0",
+        "JWT_SECRET_KEY": "${GHCR_TEST_JWT}",
+        "JWT_REVOCATION_ENABLED": "true",
+        "LOGIN_RATE_LIMIT_ENABLED": "true",
+        "CSRF_PROTECTION_ENABLED": "true",
+        "FRONTEND_ORIGIN": "http://localhost:3018"
+      },
+      "ports": [
+        "127.0.0.1:8019:8000"
+      ],
+      "depends_on": {
+        "db": {
+          "condition": "service_healthy"
+        },
+        "redis": {
+          "condition": "service_healthy"
+        },
+        "migrate": {
+          "condition": "service_completed_successfully"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+        ],
+        "interval": "3s",
+        "timeout": "4s",
+        "retries": 30
+      }
+    },
+    "frontend": {
+      "image": "ghcr.io/emilezehouri/incident-frontend@sha256:9426887e8ae94f5c1b8c8b09b2f2cfb0f3b9c766e777594d8304f355ca284d98",
+      "environment": {
+        "API_URL": "http://backend:8000",
+        "HOSTNAME": "0.0.0.0",
+        "NODE_ENV": "production",
+        "NEXT_TELEMETRY_DISABLED": "1"
+      },
+      "ports": [
+        "127.0.0.1:3018:3000"
+      ],
+      "depends_on": {
+        "backend": {
+          "condition": "service_healthy"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"
+        ],
+        "interval": "3s",
+        "timeout": "4s",
+        "retries": 30
+      }
+    }
+  },
+  "volumes": {
+    "postgres_data": {},
+    "redis_data": {}
+  }
+}
