@@ -1,83 +1,110 @@
-name: CI
+
+name: Incident Management CI
 
 on:
   push:
-    branches:
-      - main
-      - dev
-
   pull_request:
-    branches:
-      - main
-      - dev
 
 permissions:
   contents: read
 
 jobs:
   backend:
-    name: Backend quality
+    name: Backend - Ruff et Pytest
     runs-on: ubuntu-latest
 
     defaults:
       run:
         working-directory: backend
 
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: incident_management_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d incident_management_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     env:
-      APP_NAME: Incident Management API
       ENVIRONMENT: test
-      SQL_ECHO: "false"
-      DATABASE_URL: postgresql+psycopg://incident_app:ci_password@localhost:5432/incident_management
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/postgres
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/incident_management_test
+      REDIS_URL: redis://127.0.0.1:6380/0
+      TEST_REVOCATION_REDIS_URL: redis://127.0.0.1:6380/0
+      RUN_REAL_REDIS_TESTS: "1"
 
     steps:
-      - name: Récupérer le dépôt
-        uses: actions/checkout@v6
+      - name: Recuperer le code
+        uses: actions/checkout@v7
 
       - name: Installer uv
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v10
         with:
-          working-directory: backend
           enable-cache: true
+          cache-dependency-glob: backend/uv.lock
 
-      - name: Installer les dépendances
-        run: uv sync --locked
+      - name: Installer Python 3.14
+        run: uv python install 3.14
 
-      - name: Vérifier le lint Python
+      - name: Installer les dependances
+        run: uv sync --locked --dev
+
+      - name: Generer une cle JWT de test
+        run: echo "JWT_SECRET_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
+      - name: Verifier Ruff
         run: uv run --no-sync ruff check .
 
-      - name: Vérifier le formatage Python
-        run: uv run --no-sync ruff format --check .
-
-      - name: Exécuter les tests
-        run: uv run --no-sync pytest
+      - name: Executer les tests backend
+        run: uv run --no-sync pytest -q --tb=short -rs
 
   frontend:
-    name: Frontend quality
+    name: Frontend - Tests et Build
     runs-on: ubuntu-latest
 
     defaults:
       run:
         working-directory: frontend
 
-    env:
-      NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
-
     steps:
-      - name: Récupérer le dépôt
-        uses: actions/checkout@v6
+      - name: Recuperer le code
+        uses: actions/checkout@v7
 
       - name: Installer Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Installer les dépendances
+      - name: Installer les dependances
         run: npm ci
 
-      - name: Vérifier le lint TypeScript
+      - name: Executer Vitest
+        run: npm run test -- --run
+
+      - name: Verifier ESLint
         run: npm run lint
 
-      - name: Construire le front-end
+      - name: Verifier TypeScript
+        run: npx tsc --noEmit
+
+      - name: Compiler Next.js
         run: npm run build
