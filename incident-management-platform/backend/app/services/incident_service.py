@@ -523,6 +523,44 @@ class IncidentService:
             priority=priority,
         )
 
+    def paginate_created_incidents(
+        self,
+        *,
+        created_by_id: int,
+        page: int = 1,
+        page_size: int = 20,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ):
+        if page < 1 or page_size < 1 or page_size > 100:
+            raise PaginationError("Erreur concernant la page")
+
+        total = self.incident_repository.count_by_creator(
+            created_by_id=created_by_id, status=status, priority=priority, category=category
+        )
+
+        total_pages = (total + page_size - 1) // page_size
+
+        incidents = self.incident_repository.list_by_creator(
+            limit=page_size,
+            offset=(page - 1) * page_size,
+            created_by_id=created_by_id,
+            status=status,
+            priority=priority,
+            category=category,
+        )
+
+        return {
+            "items": incidents,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
+        }
+
     def paginate_assigned_incidents(
         self,
         *,

@@ -98,12 +98,17 @@ def create_incident(
 @router.get(
     "",
     status_code=status.HTTP_200_OK,
-    response_model=list[IncidentResponse],
+    response_model=list[IncidentResponse] | PaginatedIncidentsResponse,
 )
 def get_incident_list(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
-) -> list[IncidentResponse]:
+    page: Annotated[int | None, Query(ge=1)] = None,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    incident_status: Annotated[IncidentStatus | None, Query(alias="status")] = None,
+    priority: IncidentPriority | None = None,
+    category: IncidentCategory | None = None,
+) -> list[IncidentResponse] | PaginatedIncidentsResponse:
     incident_repository = IncidentRepository(db)
     incident_history_repository = IncidentHistoryRepository(db)
 
@@ -113,6 +118,21 @@ def get_incident_list(
         AuditRepository(db),
         UserRepository(db),
     )
+
+    # Keep the original list contract when pagination is not requested.
+    if page is not None:
+        try:
+            result = incident_service.paginate_created_incidents(
+                created_by_id=current_user.id, page=page, page_size=page_size,
+                status=incident_status, priority=priority, category=category,
+            )
+            return PaginatedIncidentsResponse.model_validate(result)
+        except SQLAlchemyError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erreur lors de la récupération des incidents",
+            ) from None
 
     result = incident_service.list_user_incidents(created_by_id=current_user.id)
 

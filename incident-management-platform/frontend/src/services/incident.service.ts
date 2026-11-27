@@ -28,7 +28,7 @@ export function createIncident(data: IncidentCreate): Promise<IncidentResponse> 
       category: data.category,
       priority: data.priority,
     }),
-  });
+  }).then(result => notifyIncidentUpdate(result.id, result));
 }
 
 function filteredIncidents(path: string, filters: IncidentListParams, signal?: AbortSignal) {
@@ -85,4 +85,32 @@ export function getIncidentHistory(id: string, signal?: AbortSignal): Promise<In
   return api<IncidentHistoryEvent[]>(`/incidents/${encodeURIComponent(id)}/history`, {
     method: "GET", signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12000)]) : undefined,
   });
+}
+
+
+export function listCreatedIncidents(filters: IncidentListParams = {}, signal?: AbortSignal): Promise<PaginatedIncidentsResponse> {
+  return filteredIncidents("/incidents", filters, signal);
+}
+
+export interface IncidentMetrics {
+  open: number;
+  inProgress: number;
+  criticalActive: number;
+  resolved: number;
+}
+
+export async function getIncidentMetrics(role: User["role"], signal?: AbortSignal): Promise<IncidentMetrics> {
+  const list = role === "ADMIN" ? listAllIncidents : role === "TECHNICIAN" ? listAssignedIncidents : listCreatedIncidents;
+  const filters = [
+    { status: "OPEN" },
+    { status: "IN_PROGRESS" },
+    { status: "OPEN", priority: "CRITICAL" },
+    { status: "IN_PROGRESS", priority: "CRITICAL" },
+    { status: "RESOLVED" },
+  ] satisfies IncidentListParams[];
+  const [open, inProgress, criticalOpen, criticalInProgress, resolved] = await Promise.all(
+    filters.map(filter => list({ ...filter, page: 1, page_size: 1 }, signal)),
+  );
+  return { open: open.total, inProgress: inProgress.total,
+    criticalActive: criticalOpen.total + criticalInProgress.total, resolved: resolved.total };
 }

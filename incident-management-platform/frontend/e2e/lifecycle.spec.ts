@@ -22,6 +22,20 @@ async function login(page: Page, role: string) {
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
+async function checkMetrics(page: Page, endpoint: string) {
+  const filters = ["status=OPEN", "status=IN_PROGRESS", "status=OPEN&priority=CRITICAL", "status=IN_PROGRESS&priority=CRITICAL", "status=RESOLVED"];
+  const totals = await Promise.all(filters.map(async filter => {
+    const response = await page.request.get("/api/backend" + endpoint + "?page=1&page_size=1&" + filter);
+    expect(response.status()).toBe(200);
+    return (await response.json()).total as number;
+  }));
+  const expected = [totals[0], totals[1], totals[2] + totals[3], totals[4]];
+  const labels = ["Incidents ouverts", "En cours", "Critiques actifs", "Résolus"];
+  for (let index = 0; index < labels.length; index++) {
+    await expect(page.getByRole("region", { name: labels[index], exact: true }).locator("strong")).toHaveText(String(expected[index]));
+  }
+}
+
 test(
   "real lifecycle with permissions, CSRF and audit",
   async ({ browser }) => {
@@ -39,6 +53,7 @@ test(
       // ===================================
 
       await login(user, "user");
+      await checkMetrics(user, "/incidents");
 
       const cookie = (await userContext.cookies()).find(
         (c) => c.name === "access_token",
@@ -157,7 +172,9 @@ test(
       // 4. DÉTAIL ET COMMENTAIRE USER
       // ===================================
 
-      await user.goto("/dashboard/incidents");
+      await user.goto("/dashboard");
+      await expect(user.getByRole("heading", { name: "Mes incidents", exact: true })).toBeVisible();
+      await expect(user.getByRole("region", { name: "Mes incidents", exact: true }).getByText(incidentTitle)).toBeVisible();
 
       await user
         .getByRole("link", {
@@ -226,6 +243,9 @@ test(
       // ===================================
 
       await login(admin, "admin");
+      await checkMetrics(admin, "/incidents/all");
+      await expect(admin.getByRole("heading", { name: "Suivi des incidents", exact: true })).toBeVisible();
+      await expect(admin.getByRole("region", { name: "Suivi des incidents" }).getByText(incidentTitle)).toBeVisible();
 
       await admin.goto("/dashboard/admin/incidents");
 
@@ -302,6 +322,13 @@ test(
       // 8. PRISE EN CHARGE
       // ===================================
 
+      await tech.goto("/dashboard");
+      await checkMetrics(tech, "/incidents/assigned");
+      await expect(tech.getByRole("button", { name: "Mes affectations" })).toHaveAttribute("aria-pressed", "true");
+      await expect(tech.getByRole("region", { name: "Mes incidents", exact: true }).getByText(incidentTitle)).toBeVisible();
+      await tech.setViewportSize({ width: 390, height: 844 });
+      expect(await tech.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      await tech.setViewportSize({ width: 1280, height: 720 });
       await tech.goto("/dashboard/incidents/assigned");
 
       const techRow = tech

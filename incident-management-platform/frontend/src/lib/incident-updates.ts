@@ -1,4 +1,4 @@
-// Invalidate displayed history only; events always come from FastAPI.
+// Invalidate incident views; data always comes from FastAPI.
 const listeners = new Set<(id: number) => void>();
 export function subscribeIncidentUpdates(listener: (id: number) => void) {
   listeners.add(listener);

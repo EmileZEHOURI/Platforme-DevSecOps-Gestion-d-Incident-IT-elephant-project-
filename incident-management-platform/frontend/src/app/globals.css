@@ -120,3 +120,9 @@
   .audit-table td { display:grid; grid-template-columns:100px minmax(0,1fr); gap:12px; padding:10px 0; border:0; overflow-wrap:anywhere; }
   .audit-table td::before { content:attr(data-label); font-weight:600; }
 }
+
+.incident-overview .panel-heading .muted { margin-top: 6px; font-size: 12px; line-height: 1.6; }
+.overview-list-toolbar, .overview-scopes { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 16px 20px; font-size: 12px; }
+.overview-list-toolbar { justify-content: space-between; }
+.incident-overview .assignment-filters { flex-wrap: wrap; }
+.incident-overview .incident-pagination { flex-wrap: wrap; }

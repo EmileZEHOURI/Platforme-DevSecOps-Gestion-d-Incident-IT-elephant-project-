@@ -30,14 +30,32 @@ class IncidentRepository:
 
         return self.db.scalars(statement).all()
 
-    def list_by_creator(self, *, created_by_id: int) -> list[Incident]:
-        statement = (
-            select(Incident)
-            .where(Incident.created_by_id == created_by_id)
-            .order_by(Incident.created_at.desc())
-        )
+    def list_by_creator(
+        self, *, created_by_id: int,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+        limit: int | None = None, offset: int = 0,
+    ) -> list[Incident]:
+        statement = select(Incident).where(Incident.created_by_id == created_by_id)
+        statement = self._apply_filters(
+            statement, status=status, priority=priority, category=category
+        ).order_by(Incident.created_at.desc(), Incident.id.desc())
+        if limit is not None:
+            statement = statement.limit(limit)
+        return list(self.db.scalars(statement.offset(offset)).all())
 
-        return self.db.scalars(statement).all()
+    def count_by_creator(
+        self, *, created_by_id: int,
+        status: IncidentStatus | None = None,
+        priority: IncidentPriority | None = None,
+        category: IncidentCategory | None = None,
+    ) -> int:
+        statement = select(Incident).where(Incident.created_by_id == created_by_id)
+        statement = self._apply_filters(
+            statement, status=status, priority=priority, category=category
+        ).with_only_columns(func.count(Incident.id), maintain_column_froms=True)
+        return self.db.scalar(statement) or 0
 
     def get_by_id_and_creator(
         self,

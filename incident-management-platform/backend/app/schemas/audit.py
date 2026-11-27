@@ -1,14 +1,23 @@
 
 from datetime import datetime
+from ipaddress import IPv4Address, IPv6Address
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.models.enums import AuditResult
 
 
 class AuditLogResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("ip_address", mode="before")
+    @classmethod
+    def normalize_ip_address(cls, value: object) -> object:
+        if isinstance(value, (IPv4Address, IPv6Address)):
+            return str(value)
+
+        return value
 
     id: int
     user_id: int | None
