@@ -1,0 +1,101 @@
+
+services:
+  frontend:
+    image: ghcr.io/emilezehouri/incident-frontend@sha256:9426887e8ae94f5c1b8c8b09b2f2cfb0f3b9c766e777594d8304f355ca284d98
+
+    environment:
+      NODE_ENV: production
+      API_URL: http://backend:8000
+      HOSTNAME: 0.0.0.0
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    ports:
+      - "127.0.0.1:3020:3000"
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/').then(r => process.exit(r.status < 500 ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+
+
+  migrate:
+    image: ghcr.io/emilezehouri/incident-backend@sha256:6f3d05ca3ef0cb209e582d9c04c92905f53219630a50ea680fef6bb024f6fd96
+    environment: &backend_environment
+      ENVIRONMENT: development
+      DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY obligatoire}
+      JWT_REVOCATION_ENABLED: "true"
+      LOGIN_RATE_LIMIT_ENABLED: "true"
+      CSRF_PROTECTION_ENABLED: "true"
+      FRONTEND_ORIGIN: http://localhost:3020
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+
+  backend:
+    image: ghcr.io/emilezehouri/incident-backend@sha256:6f3d05ca3ef0cb209e582d9c04c92905f53219630a50ea680fef6bb024f6fd96
+    environment: *backend_environment
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
