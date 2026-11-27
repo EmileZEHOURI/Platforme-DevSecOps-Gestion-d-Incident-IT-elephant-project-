@@ -1,0 +1,14 @@
+
+node_modules/
+.next/
+.next-e2e/
+out/
+coverage/
+playwright-report/
+test-results/
+.git/
+.env
+.env.*
+*.log
+.venv/
+__pycache__/

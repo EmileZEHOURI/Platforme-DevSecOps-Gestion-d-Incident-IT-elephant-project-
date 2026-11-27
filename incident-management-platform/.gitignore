@@ -34,3 +34,5 @@ Thumbs.db
 .vscode/
 
 ADMINCOMPTEMDP.txt
+
+!.env.docker.example
