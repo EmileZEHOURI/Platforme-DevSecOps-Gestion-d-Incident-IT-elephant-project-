@@ -108,3 +108,96 @@ jobs:
 
       - name: Compiler Next.js
         run: npm run build
+
+  
+  e2e:
+    name: E2E - Playwright
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: incident_management_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d incident_management_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      CI: "true"
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/postgres
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@127.0.0.1:5432/incident_management_test
+      REDIS_URL: redis://127.0.0.1:6380/0
+      E2E_REDIS_URL: redis://127.0.0.1:6380/0
+      JWT_REVOCATION_ENABLED: "true"
+      CSRF_PROTECTION_ENABLED: "true"
+      FRONTEND_ORIGIN: http://127.0.0.1:3017
+
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v7
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: incident-management-platform/frontend/package-lock.json
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: incident-management-platform/backend/uv.lock
+
+      - name: Installer Python 3.14
+        run: uv python install 3.14
+
+      - name: Installer les dependances backend
+        working-directory: incident-management-platform/backend
+        run: uv sync --locked --dev
+
+      - name: Installer les dependances frontend
+        working-directory: incident-management-platform/frontend
+        run: npm ci
+
+      - name: Installer Chromium et ses dependances
+        working-directory: incident-management-platform/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Executer les tests E2E
+        working-directory: incident-management-platform/frontend
+        run: uv run --project ../backend --no-sync python e2e/run.py
+
+      - name: Conserver les rapports en cas d'echec
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-e2e-debug
+          path: |
+            incident-management-platform/frontend/test-results/
+            incident-management-platform/frontend/playwright-report/
+            incident-management-platform/frontend/test-results-api.log
+          if-no-files-found: ignore
+          retention-days: 7
+
