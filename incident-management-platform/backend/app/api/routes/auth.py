@@ -12,6 +12,12 @@ from app.repositories import AuditRepository, UserRepository
 from app.schemas import LoginRequest, UserResponse
 from app.services import AuthenticationError, AuthService
 
+from redis.exceptions import RedisError
+
+from app.security.login_rate_limit import (
+    check_login_rate_limit,
+)
+
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
@@ -39,6 +45,35 @@ def login(
     )
 
     ip_address = request.client.host if request.client is not None else None
+
+
+    if (
+        settings.environment == "production"
+        or settings.login_rate_limit_enabled
+    ):
+        try:
+            retry_after = check_login_rate_limit(
+                ip_address=ip_address or "unknown",
+                email=str(payload.email),
+            )
+        except (RedisError, OSError, TimeoutError) as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="Service temporairement indisponible.",
+            ) from exc
+
+        if retry_after:
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "Trop de tentatives de connexion. "
+                    "Réessayez ultérieurement."
+                ),
+                headers={
+                    "Retry-After": str(retry_after),
+                },
+            )
+
 
     user_agent = request.headers.get("user-agent")
 

@@ -23,7 +23,7 @@ async function login(page: Page, role: string) {
 }
 
 test(
-  "real user → admin assignment → technician detail and resolution → creator closure → audit",
+  "real lifecycle with permissions, CSRF and audit",
   async ({ browser }) => {
     const userContext = await browser.newContext();
     const adminContext = await browser.newContext();
@@ -34,7 +34,10 @@ test(
     const tech = await techContext.newPage();
 
     try {
-      // 1. CONNEXION UTILISATEUR
+      // ===================================
+      // 1. AUTHENTIFICATION USER
+      // ===================================
+
       await login(user, "user");
 
       const cookie = (await userContext.cookies()).find(
@@ -43,7 +46,72 @@ test(
 
       expect(cookie?.httpOnly).toBe(true);
 
-      // 2. CRÉATION D'UN INCIDENT
+      // ===================================
+      // 2. NOUVEAU : TESTS CSRF
+      // ===================================
+
+      const csrfCases: {
+        name: string;
+        headers: Record<string, string>;
+      }[] = [
+        {
+          name: "Origine étrangère",
+          headers: {
+            Origin: "https://attacker.example",
+          },
+        },
+        {
+          name: "Referer étranger",
+          headers: {
+            Referer: "https://attacker.example/page",
+          },
+        },
+        {
+          name: "Origine opaque",
+          headers: {
+            Origin: "null",
+          },
+        },
+        {
+          name: "Origin étranger malgré un Referer autorisé",
+          headers: {
+            Origin: "https://attacker.example",
+            Referer: "http://127.0.0.1:3017/dashboard",
+          },
+        },
+      ];
+
+      for (const scenario of csrfCases) {
+        const csrfResponse = await user.request.post(
+          "/api/backend/auth/logout",
+          {
+            headers: scenario.headers,
+          },
+        );
+
+        expect(
+          csrfResponse.status(),
+          scenario.name,
+        ).toBe(403);
+
+        expect(
+          (await csrfResponse.json()).detail,
+        ).toBe("Origine de la requête non autorisée.");
+      }
+
+      // Les tentatives bloquées ne doivent
+      // pas avoir déconnecté l'utilisateur.
+
+      const sessionAfterCsrf = await user.request.get(
+        "/api/backend/auth/me",
+      );
+
+      expect(sessionAfterCsrf.status()).toBe(200);
+
+      // ===================================
+      // 3. CRÉATION D'INCIDENT
+      // ===================================
+
       const incidentTitle = "E2E panne du portail";
 
       await user.goto("/dashboard/incidents/new");
@@ -74,14 +142,21 @@ test(
         .click();
 
       const response = await created;
+
       expect(response.status()).toBe(201);
 
       const incident = await response.json();
 
-      const detailPageUrl = `/dashboard/incidents/${incident.id}`;
-      const detailApiUrl = `/api/backend/incidents/${incident.id}`;
+      const detailPageUrl =
+        `/dashboard/incidents/${incident.id}`;
 
-      // 3. LE CRÉATEUR CONSULTE SON INCIDENT
+      const detailApiUrl =
+        `/api/backend/incidents/${incident.id}`;
+
+      // ===================================
+      // 4. DÉTAIL ET COMMENTAIRE USER
+      // ===================================
+
       await user.goto("/dashboard/incidents");
 
       await user
@@ -97,7 +172,6 @@ test(
         }),
       ).toBeVisible();
 
-      // 4. AJOUT D'UN COMMENTAIRE
       await user
         .getByLabel("Ajouter un commentaire")
         .fill("Reproduction confirmée par le demandeur.");
@@ -116,8 +190,9 @@ test(
         ),
       ).toBeVisible();
 
-      // 5. TEST DE SÉCURITÉ AVANT ASSIGNATION
-      // Le technicien n'est ni créateur ni assigné.
+      // ===================================
+      // 5. TECHNICIEN NON ENCORE ASSIGNÉ
+      // ===================================
 
       await login(tech, "technician");
 
@@ -127,7 +202,6 @@ test(
 
       expect(deniedResponse.status()).toBe(404);
 
-      // Vérification également dans le navigateur.
       const deniedPageResponse = tech.waitForResponse(
         (r) =>
           new URL(r.url()).pathname === detailApiUrl &&
@@ -147,7 +221,10 @@ test(
         }),
       ).toHaveCount(0);
 
-      // 6. ASSIGNATION PAR L'ADMINISTRATEUR
+      // ===================================
+      // 6. ASSIGNATION ADMIN
+      // ===================================
+
       await login(admin, "admin");
 
       await admin.goto("/dashboard/admin/incidents");
@@ -181,8 +258,9 @@ test(
         admin.getByRole("dialog"),
       ).toHaveCount(0);
 
-      // 7. TEST DE LA CORRECTION GET_INCIDENT_DETAIL
-      // Le même technicien est maintenant assigné.
+      // ===================================
+      // 7. TECHNICIEN ASSIGNÉ : ACCÈS 200
+      // ===================================
 
       const allowedResponse = await tech.request.get(
         detailApiUrl,
@@ -190,15 +268,17 @@ test(
 
       expect(allowedResponse.status()).toBe(200);
 
-      const assignedIncident = await allowedResponse.json();
+      const assignedIncident =
+        await allowedResponse.json();
 
       expect(assignedIncident.id).toBe(incident.id);
+
       expect(assignedIncident.reference).toBe(
         incident.reference,
       );
+
       expect(assignedIncident.title).toBe(incidentTitle);
 
-      // Vérification dans la véritable interface Next.js.
       const allowedPageResponse = tech.waitForResponse(
         (r) =>
           new URL(r.url()).pathname === detailApiUrl &&
@@ -218,7 +298,10 @@ test(
         }),
       ).toBeVisible();
 
-      // 8. PRISE EN CHARGE PAR LE TECHNICIEN
+      // ===================================
+      // 8. PRISE EN CHARGE
+      // ===================================
+
       await tech.goto("/dashboard/incidents/assigned");
 
       const techRow = tech
@@ -232,7 +315,10 @@ test(
         })
         .click();
 
-      // 9. RÉSOLUTION PAR LE TECHNICIEN
+      // ===================================
+      // 9. RÉSOLUTION
+      // ===================================
+
       await techRow
         .getByRole("button", {
           name: "Résoudre l’incident",
@@ -257,7 +343,10 @@ test(
         tech.getByRole("dialog"),
       ).toHaveCount(0);
 
+      // ===================================
       // 10. CLÔTURE PAR LE CRÉATEUR
+      // ===================================
+
       await user.goto(detailPageUrl);
 
       await user
@@ -278,7 +367,10 @@ test(
         user.getByLabel("Ajouter un commentaire"),
       ).toBeDisabled();
 
-      // 11. VÉRIFICATION DE L'HISTORIQUE
+      // ===================================
+      // 11. HISTORIQUE
+      // ===================================
+
       const history = user.getByRole("region", {
         name: "Historique de l’incident",
       });
@@ -297,7 +389,10 @@ test(
         }),
       ).toBeVisible();
 
+      // ===================================
       // 12. AUDIT ADMIN
+      // ===================================
+
       await admin.goto("/dashboard/admin/audit-logs");
 
       await admin
@@ -312,7 +407,10 @@ test(
           }),
       ).toBeVisible();
 
-      // 13. INTERDICTION D'ACCÈS ADMIN POUR USER
+      // ===================================
+      // 13. CONTRÔLE D'ACCÈS ADMIN
+      // ===================================
+
       await user.goto("/dashboard/admin/users");
 
       await expect(
@@ -327,6 +425,30 @@ test(
       );
 
       expect(forbidden.status()).toBe(403);
+
+      // ===================================
+      // 14. NOUVEAU : DÉCONNEXION AUTORISÉE
+      // ===================================
+
+      const logoutResponse = await user.request.post(
+        "/api/backend/auth/logout",
+        {
+          headers: {
+            Origin: "http://127.0.0.1:3017",
+          },
+        },
+      );
+
+      expect(logoutResponse.status()).toBe(200);
+
+      // Après suppression du cookie,
+      // la session doit être invalide.
+
+      const sessionAfterLogout = await user.request.get(
+        "/api/backend/auth/me",
+      );
+
+      expect(sessionAfterLogout.status()).toBe(401);
     } finally {
       await userContext.close();
       await adminContext.close();
