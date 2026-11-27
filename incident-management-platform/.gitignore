@@ -36,3 +36,7 @@ Thumbs.db
 ADMINCOMPTEMDP.txt
 
 !.env.docker.example
+
+incident-management-platform/backups/
+# Local PostgreSQL archives and execution logs (never publish).
+/backups/
