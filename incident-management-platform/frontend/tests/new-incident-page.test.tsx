@@ -1,4 +1,3 @@
-
 import type { ReactNode } from "react";
 
 import { describe, expect, it, vi } from "vitest";
@@ -10,7 +9,7 @@ import NewIncidentPage from "@/app/dashboard/incidents/new/page";
 vi.mock("@/components/incident-form", () => ({
   IncidentForm: () => (
     <div data-testid="incident-form">
-      Formulaire de création d'incident
+      Formulaire de création d&apos;incident
     </div>
   ),
 }));
@@ -72,17 +71,12 @@ describe("NewIncidentPage", () => {
       name: /Espace incidents/,
     });
 
-    expect(backLink).toHaveAttribute(
-      "href",
-      "/dashboard/incidents",
-    );
+    expect(backLink).toHaveAttribute("href", "/dashboard/incidents");
   });
 
   it("intègre le formulaire de création d'incident", () => {
     render(<NewIncidentPage />);
 
-    expect(
-      screen.getByTestId("incident-form"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("incident-form")).toBeInTheDocument();
   });
 });

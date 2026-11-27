@@ -111,12 +111,35 @@ class IncidentService:
 
         return self.incident_repository.get_all_incident()
 
-    def get_incident_detail(self, incident_id: int, created_by_id: int) -> Incident:
-        incident = self.incident_repository.get_by_id_and_creator(
-            created_by_id=created_by_id, incident_id=incident_id
-        )
+
+    def get_incident_detail(
+        self,
+        *,
+        incident_id: int,
+        actor_id: int,
+    ) -> Incident:
+        actor = self.user_repository.get_by_id(user_id=actor_id)
+
+        if actor is None:
+            raise UserNotFoundError("Utilisateur introuvable")
+
+        if not actor.is_active:
+            raise UserInactiveError("Utilisateur désactivé")
+
+        incident = self.incident_repository.get_by_id(incident_id=incident_id)
 
         if incident is None:
+            raise IncidentNotFoundError("Incident introuvable")
+
+        is_creator = incident.created_by_id == actor_id
+
+        is_assigned_technician = (
+            actor.role is UserRole.TECHNICIAN and incident.assigned_to_id == actor_id
+        )
+
+        is_admin = actor.role is UserRole.ADMIN
+
+        if not (is_creator or is_assigned_technician or is_admin):
             raise IncidentNotFoundError("Incident introuvable")
 
         return incident
@@ -555,7 +578,6 @@ class IncidentService:
             "has_previous": page > 1,
         }
 
-
     def paginate_all_incidents(
         self,
         *,
@@ -580,7 +602,7 @@ class IncidentService:
             raise PaginationError("Erreur concernant la page")
 
         total = self.incident_repository.count_all(
-             status=status, priority=priority, category=category
+            status=status, priority=priority, category=category
         )
 
         total_pages = (total + page_size - 1) // page_size

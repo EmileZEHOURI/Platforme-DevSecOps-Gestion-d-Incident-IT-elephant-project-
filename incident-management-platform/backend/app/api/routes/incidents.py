@@ -29,7 +29,7 @@ from app.schemas.incident import (
 )
 from app.schemas.incident_comment import CommentCreate, CommentResponse
 from app.services.incident_comment_service import (
-    IncidentClosedError,
+    IncidentClosedError as CommentIncidentClosedError,
     IncidentCommentService,
 )
 from app.services.incident_service import (
@@ -154,7 +154,7 @@ def get_all_incident(
             category=category,
         )
 
-        return PaginatedIncidentsResponse.model_validate(result) 
+        return PaginatedIncidentsResponse.model_validate(result)
 
     except UserNotFoundError:
         raise HTTPException(
@@ -215,7 +215,7 @@ def get_assigned_incident_list(
             category=category,
         )
 
-        return PaginatedIncidentsResponse.model_validate(result) 
+        return PaginatedIncidentsResponse.model_validate(result)
 
     except UserNotFoundError:
         raise HTTPException(
@@ -264,7 +264,8 @@ def get_incident_detail(
 
     try:
         result = incident_service.get_incident_detail(
-            incident_id=incident_id, created_by_id=current_user.id
+            incident_id=incident_id,
+            actor_id=current_user.id,
         )
 
         response = IncidentResponse.model_validate(result)
@@ -313,11 +314,23 @@ def create_incident_comment(
             detail="incident inexistant ou inaccessible",
         ) from None
 
-    except IncidentClosedError:
+    except UserNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur inexistant ou inaccessible",
+        ) from None
+
+    except UserInactiveError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Impossible d’ajouter un commentaire à un incident fermé",
+            detail="Impossible d’assigner un incident à un utiliseur inactif",
         ) from None
+
+    except CommentIncidentClosedError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Impossible d’ajouter un commentaire à un incident fermé",
+        ) from exc
 
     return response
 

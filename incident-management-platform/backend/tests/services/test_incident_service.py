@@ -167,7 +167,16 @@ def test_get_incident_details() -> None:
         created_by_id=42,
     )
 
-    incident_repository.get_by_id_and_creator.return_value = expected_incident
+    incident_repository.get_by_id.return_value = expected_incident
+
+    user_repository.get_by_id.return_value = User(
+        id=42,
+        email="test@example.com",
+        password_hash="password_hash",
+        full_name="Utilisateur test",
+        role=UserRole.USER,
+        is_active=True,
+    )
 
     service = IncidentService(
         incident_repository,
@@ -176,7 +185,10 @@ def test_get_incident_details() -> None:
         user_repository,
     )
 
-    result = service.get_incident_detail(incident_id=1, created_by_id=42)
+    result = service.get_incident_detail(
+        incident_id=1,
+        actor_id=42,
+    )
     assert result is expected_incident
 
 
@@ -186,9 +198,16 @@ def test_get_incident_details_error() -> None:
     audit_repository = MagicMock(spec=AuditRepository)
     user_repository = MagicMock(spec=UserRepository)
 
-    expected_incident = None
+    incident_repository.get_by_id.return_value = None
 
-    incident_repository.get_by_id_and_creator.return_value = expected_incident
+    user_repository.get_by_id.return_value = User(
+        id=42,
+        email="test@example.com",
+        password_hash="password_hash",
+        full_name="Utilisateur test",
+        role=UserRole.USER,
+        is_active=True,
+    )
 
     service = IncidentService(
         incident_repository,
@@ -198,7 +217,10 @@ def test_get_incident_details_error() -> None:
     )
 
     with pytest.raises(IncidentNotFoundError):
-        service.get_incident_detail(incident_id=1, created_by_id=42)
+        service.get_incident_detail(
+            incident_id=1,
+            actor_id=42,
+        )
 
 
 def test_recuperation_list_assigned_incident() -> None:
