@@ -1,16 +1,14 @@
 from datetime import datetime
 
+from app.models.enums import AuditEventType, AuditResult, UserRole
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.user_repository import UserRepository
-from app.models.enums import AuditEventType, AuditResult, UserRole
-
+from app.services.incident_service import (
+    PaginationError,
+)
 from app.services.user_service import (
     NotEnoughAuthorization,
     UserNotFoundError,
-)
-
-from app.services.incident_service import (
-    PaginationError,
 )
 
 

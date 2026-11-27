@@ -1,5 +1,5 @@
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -11,10 +11,10 @@ from app.repositories.audit_repository import AuditRepository
 @pytest.fixture
 def dated_audit_logs(db_session, test_user):
     dates = [
-        datetime(2045, 2, 10, 10, tzinfo=timezone.utc),
-        datetime(2045, 2, 11, 10, tzinfo=timezone.utc),
-        datetime(2045, 2, 12, 10, tzinfo=timezone.utc),
-        datetime(2045, 2, 13, 10, tzinfo=timezone.utc),
+        datetime(2045, 2, 10, 10, tzinfo=UTC),
+        datetime(2045, 2, 11, 10, tzinfo=UTC),
+        datetime(2045, 2, 12, 10, tzinfo=UTC),
+        datetime(2045, 2, 13, 10, tzinfo=UTC),
     ]
 
     logs = [
@@ -45,10 +45,10 @@ def test_filter_audit_logs_between_two_dates(
         event_type=AuditEventType.LOGIN_FAILURE,
         result=AuditResult.FAILURE,
         date_from=datetime(
-            2045, 2, 11, 10, tzinfo=timezone.utc
+            2045, 2, 11, 10, tzinfo=UTC
         ),
         date_to=datetime(
-            2045, 2, 12, 10, tzinfo=timezone.utc
+            2045, 2, 12, 10, tzinfo=UTC
         ),
     )
 
@@ -71,7 +71,7 @@ def test_filter_audit_logs_with_date_from_only(
         user_id=test_user.id,
         event_type=AuditEventType.LOGIN_FAILURE,
         date_from=datetime(
-            2045, 2, 12, 10, tzinfo=timezone.utc
+            2045, 2, 12, 10, tzinfo=UTC
         ),
     )
 
@@ -94,7 +94,7 @@ def test_filter_audit_logs_with_date_to_only(
         user_id=test_user.id,
         event_type=AuditEventType.LOGIN_FAILURE,
         date_to=datetime(
-            2045, 2, 11, 10, tzinfo=timezone.utc
+            2045, 2, 11, 10, tzinfo=UTC
         ),
     )
 
@@ -118,10 +118,10 @@ def test_count_all_respects_date_filters(
         "event_type": AuditEventType.LOGIN_FAILURE,
         "result": AuditResult.FAILURE,
         "date_from": datetime(
-            2045, 2, 11, 10, tzinfo=timezone.utc
+            2045, 2, 11, 10, tzinfo=UTC
         ),
         "date_to": datetime(
-            2045, 2, 12, 10, tzinfo=timezone.utc
+            2045, 2, 12, 10, tzinfo=UTC
         ),
     }
 
@@ -147,10 +147,10 @@ def test_pagination_respects_date_filters(
         "user_id": test_user.id,
         "event_type": AuditEventType.LOGIN_FAILURE,
         "date_from": datetime(
-            2045, 2, 11, 10, tzinfo=timezone.utc
+            2045, 2, 11, 10, tzinfo=UTC
         ),
         "date_to": datetime(
-            2045, 2, 13, 10, tzinfo=timezone.utc
+            2045, 2, 13, 10, tzinfo=UTC
         ),
     }
 

@@ -1,5 +1,5 @@
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,24 +15,21 @@ from app.models.enums import (
 )
 from app.models.incident import Incident
 from app.models.user import User
-
-from app.repositories.incident_repository import IncidentRepository
-from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.audit_repository import AuditRepository
+from app.repositories.incident_history_repository import IncidentHistoryRepository
+from app.repositories.incident_repository import IncidentRepository
 from app.repositories.user_repository import UserRepository
-
 from app.services.incident_service import (
-    IncidentService,
     IncidentNotFoundError,
-    UserNotFoundError,
-    NotEnoughAuthorization,
-    IncidentWithoutAssignmentError,
+    IncidentResolutionIsEmpty,
+    IncidentService,
     IncidentStatusClosedError,
     IncidentStatusResolvedError,
+    IncidentWithoutAssignmentError,
     InvalidStatusTransitionError,
-    IncidentResolutionIsEmpty,
+    NotEnoughAuthorization,
+    UserNotFoundError,
 )
-
 
 # ==========================================================
 # HELPER : CONSTRUIRE LE CONTEXTE DE TEST
@@ -83,12 +80,12 @@ def build_resolve_context(
     ):
         incident.resolution = "Incident déjà corrigé"
         incident.resolved_at = datetime(
-            2026, 1, 1, tzinfo=timezone.utc
+            2026, 1, 1, tzinfo=UTC
         )
 
         if incident_status == IncidentStatus.CLOSED:
             incident.closed_at = datetime(
-                2026, 1, 2, tzinfo=timezone.utc
+                2026, 1, 2, tzinfo=UTC
             )
 
     incident_repository.get_by_id.return_value = (
@@ -158,7 +155,7 @@ def test_assigned_actor_can_resolve_incident(
     assert incident.resolution is None
     assert incident.resolved_at is None
 
-    before = datetime.now(timezone.utc)
+    before = datetime.now(UTC)
 
     result = service.resolve_incident(
         incident_id=incident.id,
@@ -166,7 +163,7 @@ def test_assigned_actor_can_resolve_incident(
         actor_id=actor.id,
     )
 
-    after = datetime.now(timezone.utc)
+    after = datetime.now(UTC)
 
     # L'objet retourné est bien celui qui a été modifié
     assert result is incident

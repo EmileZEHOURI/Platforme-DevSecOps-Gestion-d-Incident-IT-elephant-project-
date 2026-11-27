@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.models.enums import (
     AuditEventType,
@@ -9,8 +9,8 @@ from app.models.enums import (
     IncidentStatus,
     UserRole,
 )
-from app.models.incident import Incident
 from app.models.history import IncidentHistory
+from app.models.incident import Incident
 from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import IncidentHistoryRepository
 from app.repositories.incident_repository import IncidentRepository
@@ -104,13 +104,6 @@ class IncidentService:
     ) -> list[Incident]:
 
         return self.incident_repository.list_by_creator(created_by_id=created_by_id)
-
-    def list_all_incidents(
-        self,
-    ) -> list[Incident]:
-
-        return self.incident_repository.get_all_incident()
-
 
     def get_incident_detail(
         self,
@@ -376,7 +369,7 @@ class IncidentService:
 
         incident.status = IncidentStatus.RESOLVED
         incident.resolution = resolution_validate
-        incident.resolved_at = datetime.now(timezone.utc)
+        incident.resolved_at = datetime.now(UTC)
 
         self.incident_history_repository.create(
             incident_id=incident.id,
@@ -427,7 +420,7 @@ class IncidentService:
         old_status = incident.status
 
         incident.status = IncidentStatus.CLOSED
-        incident.closed_at = datetime.now(timezone.utc)
+        incident.closed_at = datetime.now(UTC)
 
         self.incident_history_repository.create(
             incident_id=incident.id,

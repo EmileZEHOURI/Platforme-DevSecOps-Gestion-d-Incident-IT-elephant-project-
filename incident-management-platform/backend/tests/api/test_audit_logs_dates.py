@@ -1,5 +1,5 @@
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -35,9 +35,9 @@ def admin_client(db_session, admin_user):
 @pytest.fixture
 def audit_logs_with_dates(db_session, test_user):
     dates = [
-        datetime(2045, 3, 10, 10, tzinfo=timezone.utc),
-        datetime(2045, 3, 11, 10, tzinfo=timezone.utc),
-        datetime(2045, 3, 12, 10, tzinfo=timezone.utc),
+        datetime(2045, 3, 10, 10, tzinfo=UTC),
+        datetime(2045, 3, 11, 10, tzinfo=UTC),
+        datetime(2045, 3, 12, 10, tzinfo=UTC),
     ]
 
     logs = [

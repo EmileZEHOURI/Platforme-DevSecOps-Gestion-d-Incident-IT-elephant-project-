@@ -634,7 +634,7 @@ def test_activation_audit_error_returns_500(
     assert response.status_code == 500
 
 
-def test_admin_can_list_all_users(
+def test_admin_user_list_exposes_only_public_fields(
     client_as,
     admin_user,
     test_user,
@@ -644,6 +644,13 @@ def test_admin_can_list_all_users(
 
     response = client.get("/users")
 
-    print("ADMIN ID :", admin_user.id)
-    print("STATUS :", response.status_code)
-    print("RESPONSE :", response.json())
+    assert response.status_code == 200
+    users = response.json()
+    assert isinstance(users, list)
+    assert {admin_user.id, test_user.id, technician_user.id} <= {
+        user["id"] for user in users
+    }
+    for user in users:
+        assert set(user) == {
+            "id", "email", "full_name", "role", "is_active", "created_at"
+        }

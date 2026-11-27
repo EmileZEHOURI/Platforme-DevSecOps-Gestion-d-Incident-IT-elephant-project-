@@ -1,5 +1,5 @@
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,23 +15,20 @@ from app.models.enums import (
 )
 from app.models.incident import Incident
 from app.models.user import User
-
-from app.repositories.incident_repository import IncidentRepository
+from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import (
     IncidentHistoryRepository,
 )
-from app.repositories.audit_repository import AuditRepository
+from app.repositories.incident_repository import IncidentRepository
 from app.repositories.user_repository import UserRepository
-
 from app.services.incident_service import (
-    IncidentService,
     IncidentNotFoundError,
-    UserNotFoundError,
-    NotEnoughAuthorization,
+    IncidentService,
     IncidentStatusClosedError,
     InvalidStatusTransitionError,
+    NotEnoughAuthorization,
+    UserNotFoundError,
 )
-
 
 # ==========================================================
 # HELPER : CONSTRUIRE LE CONTEXTE DE TEST
@@ -66,11 +63,11 @@ def build_close_context(
     # Un incident RESOLVED possède déjà sa résolution
     # et sa date de résolution.
     resolved_at = datetime(
-        2026, 1, 10, 14, 30, tzinfo=timezone.utc
+        2026, 1, 10, 14, 30, tzinfo=UTC
     )
 
     closed_at = datetime(
-        2026, 1, 11, 9, 15, tzinfo=timezone.utc
+        2026, 1, 11, 9, 15, tzinfo=UTC
     )
 
     is_resolved_or_closed = incident_status in (
@@ -210,14 +207,14 @@ def test_authorized_actor_can_close_incident(
     assert old_status == IncidentStatus.RESOLVED
     assert incident.closed_at is None
 
-    before = datetime.now(timezone.utc)
+    before = datetime.now(UTC)
 
     result = service.close_incident(
         incident_id=incident.id,
         actor_id=actor.id,
     )
 
-    after = datetime.now(timezone.utc)
+    after = datetime.now(UTC)
 
     # L'objet retourné est bien l'incident modifié
     assert result is incident

@@ -11,10 +11,12 @@ from app.models.enums import (
 )
 from app.models.history import IncidentHistory
 from app.models.incident import Incident
+from app.models.revoked_token import RevokedToken
 from app.models.user import User
 
 __all__ = [
     "Base",
+    "RevokedToken",
     "User",
     "Incident",
     "IncidentComment",

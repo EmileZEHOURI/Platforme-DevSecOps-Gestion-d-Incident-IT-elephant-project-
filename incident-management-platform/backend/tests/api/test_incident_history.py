@@ -8,18 +8,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.main import app
-from app.models.incident import Incident
-from app.models.user import User
 from app.models.enums import (
     IncidentCategory,
     IncidentHistoryAction,
     IncidentPriority,
     IncidentStatus,
 )
+from app.models.incident import Incident
+from app.models.user import User
 from app.repositories.incident_history_repository import (
     IncidentHistoryRepository,
 )
-
 
 # ==========================================================
 # HELPERS

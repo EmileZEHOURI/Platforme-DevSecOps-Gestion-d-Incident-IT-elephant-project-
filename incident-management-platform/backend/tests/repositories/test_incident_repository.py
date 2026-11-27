@@ -81,7 +81,7 @@ def test_list_by_creator_returns_empty_list() -> None:
     db.scalars.return_value.all.assert_called_once_with()
 
 
-def test_incident_found() -> None:
+def test_get_by_id_and_creator_returns_incident() -> None:
     db = MagicMock(spec=Session)
     repository = IncidentRepository(db)
 
@@ -142,7 +142,7 @@ def test_list_by_assignee_returns_empty_list_when_no_incident_is_assigned() -> N
     db.scalars.return_value.all.assert_called_once_with()
 
 
-def test_incident_found() -> None:
+def test_get_by_id_returns_incident() -> None:
     db = MagicMock(spec=Session)
     repository = IncidentRepository(db)
 

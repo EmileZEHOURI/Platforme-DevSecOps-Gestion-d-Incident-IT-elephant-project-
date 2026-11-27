@@ -30,6 +30,11 @@ class Settings(BaseSettings):
 
     redis_url: str | None = None
     login_rate_limit_enabled: bool = False
+    jwt_revocation_enabled: bool = False
+
+    @property
+    def jwt_revocation_required(self) -> bool:
+        return self.environment == "production" or self.jwt_revocation_enabled
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -44,11 +49,13 @@ class Settings(BaseSettings):
         """Refuse les configurations non sûres en production."""
 
         if (
-            self.environment == "production" or self.login_rate_limit_enabled
+            self.environment == "production"
+            or self.login_rate_limit_enabled
+            or self.jwt_revocation_enabled
         ) and not self.redis_url:
             raise ValueError(
                 "REDIS_URL est obligatoire lorsque "
-                "la limitation des connexions est activée."
+                "la limitation des connexions ou la révocation JWT est activée."
             )
 
         if self.environment != "production":
@@ -56,7 +63,7 @@ class Settings(BaseSettings):
 
         if len(self.jwt_secret_key.encode("utf-8")) < 32:
             raise ValueError(
-                "JWT_SECRET_KEY doit contenir au moins " "32 octets en production."
+                "JWT_SECRET_KEY doit contenir au moins 32 octets en production."
             )
 
         origin = self.frontend_origin
@@ -67,7 +74,7 @@ class Settings(BaseSettings):
         try:
             parsed = urlsplit(origin)
             # Déclenche une erreur si le port est invalide.
-            parsed.port
+            _ = parsed.port
         except ValueError as exc:
             raise ValueError("FRONTEND_ORIGIN est invalide.") from exc
 

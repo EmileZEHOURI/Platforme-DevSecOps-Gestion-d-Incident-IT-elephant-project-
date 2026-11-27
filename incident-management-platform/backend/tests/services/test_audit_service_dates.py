@@ -1,5 +1,5 @@
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -45,10 +45,10 @@ def test_service_forwards_date_filters(
     )
 
     date_from = datetime(
-        2026, 11, 1, tzinfo=timezone.utc
+        2026, 11, 1, tzinfo=UTC
     )
     date_to = datetime(
-        2026, 11, 25, tzinfo=timezone.utc
+        2026, 11, 25, tzinfo=UTC
     )
 
     result = service.paginate_audit_logs(
@@ -97,10 +97,10 @@ def test_service_rejects_inverted_date_range(
         service.paginate_audit_logs(
             actor_id=1,
             date_from=datetime(
-                2026, 11, 25, tzinfo=timezone.utc
+                2026, 11, 25, tzinfo=UTC
             ),
             date_to=datetime(
-                2026, 11, 1, tzinfo=timezone.utc
+                2026, 11, 1, tzinfo=UTC
             ),
         )
 
@@ -112,12 +112,12 @@ def test_service_rejects_inverted_date_range(
     "date_from,date_to",
     [
         (
-            datetime(2026, 11, 1, tzinfo=timezone.utc),
+            datetime(2026, 11, 1, tzinfo=UTC),
             None,
         ),
         (
             None,
-            datetime(2026, 11, 25, tzinfo=timezone.utc),
+            datetime(2026, 11, 25, tzinfo=UTC),
         ),
     ],
 )
@@ -161,7 +161,7 @@ def test_service_accepts_identical_date_bounds(
     )
 
     date = datetime(
-        2026, 11, 25, 12, tzinfo=timezone.utc
+        2026, 11, 25, 12, tzinfo=UTC
     )
 
     service.paginate_audit_logs(

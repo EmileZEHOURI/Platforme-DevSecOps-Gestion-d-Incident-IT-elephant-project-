@@ -1,6 +1,8 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from redis.exceptions import RedisError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
@@ -10,13 +12,15 @@ from app.models import User
 from app.models.enums import AuditEventType, AuditResult, UserRole
 from app.repositories import AuditRepository, UserRepository
 from app.schemas import LoginRequest, UserResponse
-from app.services import AuthenticationError, AuthService
-
-from redis.exceptions import RedisError
-
 from app.security.login_rate_limit import (
     check_login_rate_limit,
 )
+from app.security.token_revocation import (
+    RevocationUnavailableError,
+    cache_revocation,
+    persist_revocation,
+)
+from app.services import AuthenticationError, AuthService
 
 router = APIRouter(
     prefix="/auth",
@@ -46,11 +50,7 @@ def login(
 
     ip_address = request.client.host if request.client is not None else None
 
-
-    if (
-        settings.environment == "production"
-        or settings.login_rate_limit_enabled
-    ):
+    if settings.environment == "production" or settings.login_rate_limit_enabled:
         try:
             retry_after = check_login_rate_limit(
                 ip_address=ip_address or "unknown",
@@ -65,15 +65,11 @@ def login(
         if retry_after:
             raise HTTPException(
                 status_code=429,
-                detail=(
-                    "Trop de tentatives de connexion. "
-                    "Réessayez ultérieurement."
-                ),
+                detail=("Trop de tentatives de connexion. Réessayez ultérieurement."),
                 headers={
                     "Retry-After": str(retry_after),
                 },
             )
-
 
     user_agent = request.headers.get("user-agent")
 
@@ -138,15 +134,34 @@ def logout(
 
     user_agent = request.headers.get("user-agent")
 
-    audit_repository.create(
-        event_type=AuditEventType.LOGOUT,
-        result=AuditResult.SUCCESS,
-        user_id=current_user.id,
-        ip_address=ip_address,
-        user_agent=user_agent,
-    )
+    try:
+        audit_repository.create(
+            event_type=AuditEventType.LOGOUT,
+            result=AuditResult.SUCCESS,
+            user_id=current_user.id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
 
-    db.commit()
+        if settings.jwt_revocation_required:
+            claims = request.state.access_token_claims
+            persist_revocation(db, claims.jti, claims.expires_at)
+        db.commit()
+
+    except SQLAlchemyError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=503, detail="Service temporairement indisponible."
+        ) from exc
+
+    if settings.jwt_revocation_required:
+        try:
+            cache_revocation(claims.jti, claims.expires_at)
+        except RevocationUnavailableError as exc:
+            # SQL revocation is already durable. Never report Redis success.
+            raise HTTPException(
+                status_code=503, detail="Service temporairement indisponible."
+            ) from exc
 
     response.delete_cookie(key="access_token", path="/")
 

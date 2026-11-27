@@ -11,19 +11,17 @@ from app.models.enums import (
     IncidentStatus,
     UserRole,
 )
-from app.repositories.incident_repository import IncidentRepository
+from app.repositories.audit_repository import AuditRepository
 from app.repositories.incident_history_repository import (
     IncidentHistoryRepository,
 )
-from app.repositories.audit_repository import AuditRepository
+from app.repositories.incident_repository import IncidentRepository
 from app.repositories.user_repository import UserRepository
-
 from app.services.incident_service import (
     IncidentService,
     NotEnoughAuthorization,
     UserNotFoundError,
 )
-
 
 # ==========================================================
 # FIXTURES

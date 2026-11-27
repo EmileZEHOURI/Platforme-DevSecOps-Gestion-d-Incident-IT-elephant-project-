@@ -1,19 +1,18 @@
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.main import app
-from app.models.incident import Incident
-from app.models.user import User
 from app.models.enums import (
     IncidentCategory,
     IncidentPriority,
     IncidentStatus,
 )
-
+from app.models.incident import Incident
+from app.models.user import User
 
 # ============================================================
 # FIXTURES
@@ -51,7 +50,7 @@ def pagination_incidents(
     other_technician_user: User,
 ):
     base_time = (
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
         - timedelta(days=2)
     )
 

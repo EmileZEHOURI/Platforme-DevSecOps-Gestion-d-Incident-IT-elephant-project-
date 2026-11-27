@@ -10,6 +10,7 @@ import urllib.request
 from pathlib import Path
 from uuid import uuid4
 
+from redis.exceptions import RedisError
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
@@ -43,6 +44,8 @@ os.environ.update(
     DATABASE_URL=test_url.render_as_string(hide_password=False),
     ENVIRONMENT="test",
     JWT_SECRET_KEY=secrets.token_urlsafe(48),
+    JWT_REVOCATION_ENABLED="true",
+    REDIS_URL=os.environ.get("E2E_REDIS_URL", "redis://127.0.0.1:6380/0"),
     CSRF_PROTECTION_ENABLED="true",
     FRONTEND_ORIGIN="http://127.0.0.1:3017",
 )
@@ -50,6 +53,9 @@ from app.models import User  # noqa: E402
 from app.models.base import Base  # noqa: E402
 from app.models.enums import UserRole  # noqa: E402
 from app.security import hash_password  # noqa: E402
+from app.security.redis_client import get_redis_client  # noqa: E402
+
+get_redis_client().ping()
 
 engine = None
 process = None
@@ -121,7 +127,16 @@ finally:
             process.kill()
             process.wait()
     if engine is not None:
-        engine.dispose()
+        # Only keys belonging to the isolated schema and random signing key.
+        try:
+            with engine.connect() as conn:
+                for digest in conn.scalars(text("SELECT digest FROM revoked_tokens")):
+                    get_redis_client().delete(f"auth:revoked:{digest}")
+        except RedisError:
+            # Cache entries still expire automatically; SQL cleanup must proceed.
+            print("Redis cleanup unavailable; isolated keys will expire by TTL.", file=sys.stderr)
+        finally:
+            engine.dispose()
     if created:
         with admin.begin() as conn:
             conn.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))

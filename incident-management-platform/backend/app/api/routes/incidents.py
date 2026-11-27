@@ -20,16 +20,18 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.incident import (
     IncidentAssignmentUpdate,
     IncidentCreate,
+    IncidentHistoryResponse,
     IncidentPriorityUpdate,
     IncidentResolveRequest,
     IncidentResponse,
     IncidentStatusUpdate,
-    IncidentHistoryResponse,
     PaginatedIncidentsResponse,
 )
 from app.schemas.incident_comment import CommentCreate, CommentResponse
 from app.services.incident_comment_service import (
     IncidentClosedError as CommentIncidentClosedError,
+)
+from app.services.incident_comment_service import (
     IncidentCommentService,
 )
 from app.services.incident_service import (

@@ -1,32 +1,25 @@
-from typing import Annotated
 from datetime import datetime
-
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
-
+from app.core.database import get_db
+from app.models.enums import AuditEventType, AuditResult
+from app.models.user import User
+from app.repositories.audit_repository import AuditRepository
+from app.repositories.user_repository import UserRepository
+from app.schemas.audit import PaginatedAuditLogsResponse
+from app.services.audit_service import AuditService, InvalidAuditDateRangeError
+from app.services.incident_service import (
+    PaginationError,
+)
 from app.services.user_service import (
     NotEnoughAuthorization,
     UserNotFoundError,
 )
-
-
-from app.services.incident_service import (
-    PaginationError,
-)
-
-
-from app.core.database import get_db
-from app.models.enums import AuditEventType, AuditResult
-from app.models.user import User
-from app.schemas.audit import PaginatedAuditLogsResponse
-from app.repositories.audit_repository import AuditRepository
-from app.repositories.user_repository import UserRepository
-from app.services.audit_service import AuditService
-from app.services.audit_service import InvalidAuditDateRangeError
 
 router = APIRouter(
     prefix="/audit-logs",

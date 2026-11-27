@@ -2,7 +2,6 @@ import time
 
 import fakeredis
 import pytest
-
 from fastapi.testclient import TestClient
 from redis.exceptions import RedisError
 

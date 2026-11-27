@@ -1,4 +1,6 @@
 
+from datetime import UTC
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -14,7 +16,6 @@ from app.models.enums import (
 )
 from app.models.incident import Incident
 from app.models.user import User
-
 
 # ==========================================================
 # HELPERS
@@ -355,9 +356,9 @@ def test_admin_cannot_change_closed_incident_priority(
 
         assert incident is not None
 
-        from datetime import datetime, timezone
+        from datetime import datetime
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         incident.assigned_to_id = technician_user.id
         incident.status = IncidentStatus.CLOSED

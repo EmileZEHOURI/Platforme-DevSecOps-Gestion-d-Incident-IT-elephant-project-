@@ -3,18 +3,17 @@ from datetime import timedelta
 
 from sqlalchemy.orm import Session
 
-from app.models.incident import Incident
-from app.models.user import User
 from app.models.enums import (
     IncidentCategory,
+    IncidentHistoryAction,
     IncidentPriority,
     IncidentStatus,
-    IncidentHistoryAction,
 )
+from app.models.incident import Incident
+from app.models.user import User
 from app.repositories.incident_history_repository import (
     IncidentHistoryRepository,
 )
-
 
 # ==========================================================
 # HELPERS

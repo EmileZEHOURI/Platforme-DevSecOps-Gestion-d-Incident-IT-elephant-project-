@@ -1,3 +1,6 @@
+import re
+import secrets
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -19,6 +22,7 @@ def create_access_token(user_id: int) -> str:
 
     payload = {
         "sub": str(user_id),
+        "jti": secrets.token_hex(16),
         "type": "access",
         "iat": now,
         "exp": expires_at,
@@ -31,7 +35,14 @@ def create_access_token(user_id: int) -> str:
     )
 
 
-def decode_access_token(token: str) -> int:
+@dataclass(frozen=True, slots=True)
+class AccessTokenClaims:
+    user_id: int
+    jti: str | None
+    expires_at: int
+
+
+def decode_access_token_claims(token: str) -> AccessTokenClaims:
     """Vérifie un jeton et retourne l'identifiant utilisateur."""
 
     try:
@@ -64,4 +75,18 @@ def decode_access_token(token: str) -> int:
     if user_id <= 0:
         raise InvalidAccessTokenError
 
-    return user_id
+    jti = payload.get("jti")
+    if jti is not None and (
+        not isinstance(jti, str) or not re.fullmatch(r"[0-9a-f]{32}", jti)
+    ):
+        raise InvalidAccessTokenError
+    if settings.jwt_revocation_required and jti is None:
+        raise InvalidAccessTokenError
+    if type(payload.get("exp")) is not int or type(payload.get("iat")) is not int:
+        raise InvalidAccessTokenError
+    return AccessTokenClaims(user_id=user_id, jti=jti, expires_at=payload["exp"])
+
+
+def decode_access_token(token: str) -> int:
+    """Compatibility helper; revocation is enforced by the API dependency."""
+    return decode_access_token_claims(token).user_id

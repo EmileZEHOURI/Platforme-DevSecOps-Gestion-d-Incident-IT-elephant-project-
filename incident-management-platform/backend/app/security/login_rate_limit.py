@@ -1,12 +1,8 @@
-
 import hashlib
 import hmac
-from functools import lru_cache
-
-from redis import Redis
 
 from app.core.config import settings
-
+from app.security.redis_client import get_redis_client
 
 IP_LIMIT = 20
 IP_WINDOW = 300
@@ -51,22 +47,10 @@ return {1, 0}
 """
 
 
-@lru_cache
-def get_redis_client() -> Redis:
-    if not settings.redis_url:
-        raise RuntimeError("REDIS_URL manquant.")
-
-    return Redis.from_url(
-        settings.redis_url,
-        socket_connect_timeout=1,
-        socket_timeout=1,
-    )
-
-
 def make_key(kind: str, value: str) -> str:
     """Évite de stocker l'email ou l'IP en clair dans la clé."""
 
-    content = f"login-rate:{kind}:{value}".encode("utf-8")
+    content = f"login-rate:{kind}:{value}".encode()
 
     digest = hmac.new(
         settings.jwt_secret_key.encode("utf-8"),

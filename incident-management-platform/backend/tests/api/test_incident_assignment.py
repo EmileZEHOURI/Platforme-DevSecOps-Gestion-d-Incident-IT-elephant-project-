@@ -1,6 +1,6 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import timedelta
-from typing import Iterator
 
 import pytest
 from fastapi.testclient import TestClient

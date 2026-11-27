@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,9 +6,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.main import app
-from app.models.user import User
-from app.models.incident import Incident
-from app.models.history import IncidentHistory
 from app.models.audit_log import AuditLog
 from app.models.enums import (
     AuditEventType,
@@ -17,6 +14,9 @@ from app.models.enums import (
     IncidentPriority,
     IncidentStatus,
 )
+from app.models.history import IncidentHistory
+from app.models.incident import Incident
+from app.models.user import User
 
 # ==========================================================
 # HELPERS
@@ -85,10 +85,10 @@ def prepare_incident(
         IncidentStatus.CLOSED,
     ):
         incident.resolution = "Redémarrage et vérification du service."
-        incident.resolved_at = datetime.now(timezone.utc)
+        incident.resolved_at = datetime.now(UTC)
 
     if incident_status == IncidentStatus.CLOSED:
-        incident.closed_at = datetime.now(timezone.utc)
+        incident.closed_at = datetime.now(UTC)
 
     db_session.flush()
 
@@ -200,14 +200,14 @@ def test_authorized_actor_can_close_incident(
 
         audits_before = len(get_close_audits(db_session, actor.id))
 
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
 
         response = close_incident(
             actor_client,
             incident_id,
         )
 
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         assert response.status_code == 200, response.text
 

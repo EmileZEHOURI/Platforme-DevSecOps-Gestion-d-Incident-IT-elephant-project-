@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,17 +7,17 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.main import app
+from app.models.enums import (
+    IncidentCategory,
+    IncidentPriority,
+    IncidentStatus,
+)
 from app.models.incident import Incident
 from app.models.user import User
-from app.models.enums import (
-    IncidentStatus,
-    IncidentPriority,
-    IncidentCategory,
-)
-from app.repositories.incident_repository import IncidentRepository
 from app.repositories.incident_history_repository import (
     IncidentHistoryRepository,
 )
+from app.repositories.incident_repository import IncidentRepository
 from app.services.incident_service import (
     IncidentService,
     UserNotFoundError,
@@ -126,7 +126,7 @@ def filter_dataset(
     other_technician_user: User,
 ):
 
-    base_time = datetime.now(timezone.utc) - timedelta(minutes=30)
+    base_time = datetime.now(UTC) - timedelta(minutes=30)
 
     definitions = [
         (
@@ -638,7 +638,7 @@ def test_filter_resolved_and_closed_incidents(
     incident_status,
 ):
 
-    base_time = datetime.now(timezone.utc) - timedelta(minutes=10)
+    base_time = datetime.now(UTC) - timedelta(minutes=10)
 
     resolved_incident = create_test_incident(
         db_session,

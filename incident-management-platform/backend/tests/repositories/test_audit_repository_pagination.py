@@ -1,5 +1,5 @@
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.models.audit_log import AuditLog
 from app.models.enums import AuditEventType, AuditResult
@@ -65,10 +65,10 @@ def test_list_all_applies_ordering_and_pagination(
     repository = AuditRepository(db_session)
 
     timestamps = [
-        datetime(2030, 1, 1, tzinfo=timezone.utc),
-        datetime(2030, 1, 2, tzinfo=timezone.utc),
-        datetime(2030, 1, 2, tzinfo=timezone.utc),
-        datetime(2030, 1, 3, tzinfo=timezone.utc),
+        datetime(2030, 1, 1, tzinfo=UTC),
+        datetime(2030, 1, 2, tzinfo=UTC),
+        datetime(2030, 1, 2, tzinfo=UTC),
+        datetime(2030, 1, 3, tzinfo=UTC),
     ]
 
     logs = [

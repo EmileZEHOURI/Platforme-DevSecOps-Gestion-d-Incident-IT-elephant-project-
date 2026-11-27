@@ -449,6 +449,17 @@ test(
       );
 
       expect(sessionAfterLogout.status()).toBe(401);
+
+      // The copied JWT must stay unusable even when explicitly replayed.
+      expect(cookie?.value).toBeTruthy();
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const replay = await user.request.get("/api/backend/auth/me", {
+          headers: { Cookie: `access_token=${cookie!.value}` },
+        });
+        expect(replay.status()).toBe(401);
+      }
+      expect((await admin.request.get("/api/backend/auth/me")).status()).toBe(200);
+
     } finally {
       await userContext.close();
       await adminContext.close();

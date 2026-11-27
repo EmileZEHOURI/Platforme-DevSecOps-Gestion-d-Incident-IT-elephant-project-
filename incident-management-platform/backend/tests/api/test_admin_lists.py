@@ -4,9 +4,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.main import app
-from app.models.user import User
 from app.models.enums import UserRole
-
+from app.models.user import User
 
 # ============================================
 # HELPERS

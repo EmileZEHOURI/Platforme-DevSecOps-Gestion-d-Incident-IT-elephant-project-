@@ -1,18 +1,17 @@
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy.orm import Session
 
+from app.models.enums import (
+    IncidentCategory,
+    IncidentPriority,
+    IncidentStatus,
+)
 from app.models.incident import Incident
 from app.models.user import User
-from app.models.enums import (
-    IncidentStatus,
-    IncidentPriority,
-    IncidentCategory,
-)
 from app.repositories.incident_repository import IncidentRepository
-
 
 # ==========================================================
 # HELPERS
@@ -150,7 +149,7 @@ def pagination_dataset(
 ) -> dict[str, int]:
 
     base_time = (
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
         - timedelta(days=1)
     )
 
@@ -548,7 +547,7 @@ def test_same_creation_date_is_sorted_by_id_desc(
     repository = IncidentRepository(db_session)
 
     same_date = (
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
         - timedelta(days=1)
     )
 
@@ -627,7 +626,7 @@ def test_count_and_paginate_resolved_closed_incidents(
     repository = IncidentRepository(db_session)
 
     base_time = (
-        datetime.now(timezone.utc)
+        datetime.now(UTC)
         - timedelta(days=1)
     )
 

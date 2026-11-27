@@ -1,5 +1,5 @@
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -7,18 +7,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.main import app
-from app.models.user import User
-from app.models.incident import Incident
-from app.models.history import IncidentHistory
 from app.models.audit_log import AuditLog
 from app.models.enums import (
-    IncidentPriority,
-    IncidentStatus,
-    IncidentHistoryAction,
     AuditEventType,
     AuditResult,
+    IncidentHistoryAction,
+    IncidentPriority,
+    IncidentStatus,
 )
-
+from app.models.history import IncidentHistory
+from app.models.incident import Incident
+from app.models.user import User
 
 # ==========================================================
 # HELPERS
@@ -101,7 +100,7 @@ def prepare_incident(
         IncidentStatus.RESOLVED,
         IncidentStatus.CLOSED,
     ):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         incident.resolution = "Incident déjà corrigé."
         incident.resolved_at = now
@@ -199,7 +198,7 @@ def test_assigned_actor_can_resolve_incident(
             get_resolution_audits(db_session, actor.id)
         )
 
-        before = datetime.now(timezone.utc)
+        before = datetime.now(UTC)
 
         response = resolve_incident(
             actor_client,
@@ -207,7 +206,7 @@ def test_assigned_actor_can_resolve_incident(
             "Correction du serveur effectuée.",
         )
 
-        after = datetime.now(timezone.utc)
+        after = datetime.now(UTC)
 
         assert response.status_code == 200, response.text
 

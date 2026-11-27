@@ -11,7 +11,6 @@ from app.core.config import settings
 from app.main import app
 from app.security import login_rate_limit
 
-
 pytestmark = pytest.mark.skipif(
     os.getenv("RUN_REAL_REDIS_TESTS") != "1",
     reason="Tests Redis réels non activés.",

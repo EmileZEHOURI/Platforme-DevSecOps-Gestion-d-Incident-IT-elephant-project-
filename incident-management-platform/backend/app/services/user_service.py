@@ -1,8 +1,8 @@
-from app.repositories.user_repository import UserRepository
-from app.repositories.incident_repository import IncidentRepository
-from app.repositories.audit_repository import AuditRepository
-from app.models.user import User, UserRole
 from app.models.enums import AuditEventType, AuditResult
+from app.models.user import User, UserRole
+from app.repositories.audit_repository import AuditRepository
+from app.repositories.incident_repository import IncidentRepository
+from app.repositories.user_repository import UserRepository
 
 
 class NotEnoughAuthorization(Exception):

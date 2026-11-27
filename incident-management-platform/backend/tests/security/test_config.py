@@ -6,7 +6,6 @@ from pydantic import ValidationError
 
 from app.core.config import Settings
 
-
 VALID_ORIGIN = "https://incidents.example.com"
 
 

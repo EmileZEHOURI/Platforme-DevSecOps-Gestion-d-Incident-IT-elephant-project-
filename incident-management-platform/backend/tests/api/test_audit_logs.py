@@ -1,9 +1,9 @@
-
+import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
+from app.main import app
 
 
 def test_admin_can_list_audit_logs(db_session, admin_user):
@@ -37,9 +37,6 @@ def test_admin_can_list_audit_logs(db_session, admin_user):
     finally:
         app.dependency_overrides.clear()
         app.dependency_overrides.update(previous_overrides)
-
-
-import pytest
 
 
 def test_non_admin_cannot_list_audit_logs(db_session, test_user):

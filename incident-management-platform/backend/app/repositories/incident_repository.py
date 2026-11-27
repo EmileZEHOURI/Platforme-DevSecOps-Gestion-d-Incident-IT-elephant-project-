@@ -1,4 +1,4 @@
-from sqlalchemy import Select, select, func
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.models.enums import IncidentCategory, IncidentPriority, IncidentStatus
