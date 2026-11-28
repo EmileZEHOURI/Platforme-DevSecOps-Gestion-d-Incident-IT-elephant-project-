@@ -1,0 +1,13 @@
+
+> frontend@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.12 C:/Users/Emile/Desktop/Bureau/elephant-project/incident-management-platform/frontend
+
+
+ Test Files  14 passed (14)
+      Tests  183 passed (183)
+   Start at  13:41:00
+   Duration  17.70s (transform 7.21s, setup 22.31s, import 15.24s, tests 42.25s, environment 66.86s)
+

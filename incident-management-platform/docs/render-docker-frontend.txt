@@ -1,0 +1,46 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 581B 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/node:22-alpine
+#2 DONE 1.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 181B done
+#3 DONE 0.0s
+
+#4 [1/6] FROM docker.io/library/node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
+#4 resolve docker.io/library/node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 5.92kB 0.0s done
+#5 DONE 0.0s
+
+#6 [2/6] WORKDIR /app
+#6 CACHED
+
+#7 [3/6] COPY package.json package-lock.json ./
+#7 CACHED
+
+#8 [4/6] RUN npm ci
+#8 CACHED
+
+#9 [5/6] COPY . .
+#9 CACHED
+
+#10 [6/6] RUN npm run build
+#10 CACHED
+
+#11 exporting to image
+#11 exporting layers done
+#11 exporting manifest sha256:55694a9ee647026cdc95d85cad0df078bee77a0627b340a203dfecece71c37eb 0.0s done
+#11 exporting config sha256:fdd8aafc79896b63f965e0b876bc490e4063bfc72d366d25b43d0bbda762df5e 0.0s done
+#11 exporting attestation manifest sha256:9bc4cbb996eb768e9e75289022180fd088f2be71cbd185f1c3be0dda7773cbd3
+#11 exporting attestation manifest sha256:9bc4cbb996eb768e9e75289022180fd088f2be71cbd185f1c3be0dda7773cbd3 0.0s done
+#11 exporting manifest list sha256:276ccd4de305b29eb13e125fc1128ccea0c58fca5e964a8ccd3c871a6aa44689 0.0s done
+#11 naming to docker.io/library/incident-frontend:release-validation done
+#11 unpacking to docker.io/library/incident-frontend:release-validation 0.0s done
+#11 DONE 0.2s

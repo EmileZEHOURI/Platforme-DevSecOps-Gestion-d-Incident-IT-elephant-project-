@@ -1,0 +1,42 @@
+[
+  {
+    "method": "OPTIONS",
+    "path": "/auth/login",
+    "origin": "http://localhost:3000",
+    "status": 200,
+    "allow_origin": "http://localhost:3000",
+    "body": "OK"
+  },
+  {
+    "method": "OPTIONS",
+    "path": "/auth/login",
+    "origin": "https://example.invalid",
+    "status": 400,
+    "allow_origin": null,
+    "body": "Disallowed CORS origin"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "origin": "https://example.invalid",
+    "status": 403,
+    "allow_origin": null,
+    "body": "{\"detail\":\"Origine de la requ\u00eate non autoris\u00e9e.\"}"
+  },
+  {
+    "method": "POST",
+    "path": "/auth/logout",
+    "origin": "https://example.invalid",
+    "status": 403,
+    "allow_origin": null,
+    "body": "{\"detail\":\"Origine de la requ\u00eate non autoris\u00e9e.\"}"
+  },
+  {
+    "method": "POST",
+    "path": "/incidents",
+    "origin": "https://example.invalid",
+    "status": 403,
+    "allow_origin": null,
+    "body": "{\"detail\":\"Origine de la requ\u00eate non autoris\u00e9e.\"}"
+  }
+]

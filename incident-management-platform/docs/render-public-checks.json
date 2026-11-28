@@ -1,0 +1,70 @@
+[
+  {
+    "path": "/health",
+    "status": 200,
+    "body": {
+      "status": "ok"
+    }
+  },
+  {
+    "path": "/health/database",
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "database": "connected"
+    }
+  },
+  {
+    "path": "/docs",
+    "status": 200,
+    "body": null
+  },
+  {
+    "path": "/openapi.json",
+    "status": 200,
+    "body": {
+      "paths": [
+        "/auth/login",
+        "/auth/me",
+        "/auth/logout",
+        "/auth/technicians",
+        "/incidents",
+        "/incidents/all",
+        "/incidents/assigned",
+        "/incidents/{incident_id}",
+        "/incidents/{incident_id}/comments",
+        "/incidents/{incident_id}/assignment",
+        "/incidents/{incident_id}/priority",
+        "/incidents/{incident_id}/status",
+        "/incidents/{incident_id}/resolve",
+        "/incidents/{incident_id}/close",
+        "/incidents/{incident_id}/history",
+        "/users/{user_id}/activation",
+        "/users",
+        "/audit-logs",
+        "/health",
+        "/health/database"
+      ]
+    }
+  },
+  {
+    "path": "/auth/me",
+    "status": 401
+  },
+  {
+    "path": "/incidents",
+    "status": 401
+  },
+  {
+    "path": "/incidents/all",
+    "status": 401
+  },
+  {
+    "path": "/users",
+    "status": 401
+  },
+  {
+    "path": "/audit-logs",
+    "status": 401
+  }
+]

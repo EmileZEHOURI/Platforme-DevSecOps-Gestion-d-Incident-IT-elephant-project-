@@ -1,0 +1,48 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 605B 0.0s done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+#2 DONE 0.6s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 158B done
+#3 DONE 0.0s
+
+#4 [1/6] FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim@sha256:7cf77f594be8042dab6daa9fe326f90962252268b4f120a7f5dccce4d947e6c1
+#4 resolve ghcr.io/astral-sh/uv:python3.14-bookworm-slim@sha256:7cf77f594be8042dab6daa9fe326f90962252268b4f120a7f5dccce4d947e6c1 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 21.64kB 0.0s done
+#5 DONE 0.0s
+
+#6 [2/6] WORKDIR /app
+#6 CACHED
+
+#7 [3/6] COPY pyproject.toml uv.lock ./
+#7 CACHED
+
+#8 [4/6] RUN uv sync --frozen --no-dev --no-install-project
+#8 CACHED
+
+#9 [5/6] COPY . .
+#9 DONE 0.1s
+
+#10 [6/6] RUN useradd --create-home --uid 10001 appuser     && chown -R appuser:appuser /app
+#10 DONE 9.9s
+
+#11 exporting to image
+#11 exporting layers
+#11 exporting layers 4.0s done
+#11 exporting manifest sha256:4c3a11c92eb4da5abefe3272ad738426af77a6ffe0c5bef0f721e388d0ac1e6c 0.0s done
+#11 exporting config sha256:10ab957bae49a4dcf382ec1edce883d2abc3d3cebe664ca7ba28fade80291f45 0.0s done
+#11 exporting attestation manifest sha256:cdadf6ccf66e5e8f9cf2e169b116a96c1f1061f22d25bbba4612e69b19c9ccc2 0.0s done
+#11 exporting manifest list sha256:28c51e928fbdf0d8739d11c1ffdb78d29b6df2b950683866ff75f1c481aadb9b
+#11 exporting manifest list sha256:28c51e928fbdf0d8739d11c1ffdb78d29b6df2b950683866ff75f1c481aadb9b 0.0s done
+#11 naming to docker.io/library/incident-backend:release-validation done
+#11 unpacking to docker.io/library/incident-backend:release-validation
+#11 unpacking to docker.io/library/incident-backend:release-validation 2.4s done
+#11 DONE 6.9s
