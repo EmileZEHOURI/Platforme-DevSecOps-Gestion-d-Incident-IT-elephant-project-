@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     jwt_revocation_enabled: bool = False
 
     @property
+    def cors_origins(self) -> list[str]:
+        if self.frontend_origin:
+            return [self.frontend_origin]
+        if self.environment == "production":
+            return []
+        return ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+    @property
     def jwt_revocation_required(self) -> bool:
         return self.environment == "production" or self.jwt_revocation_enabled
 

@@ -72,6 +72,11 @@ jobs:
       - name: Verifier Ruff
         run: uv run --no-sync ruff check .
 
+      - name: Auditer les dependances Python de production
+        run: |
+          uv export --frozen --no-dev --no-emit-project --format requirements-txt --output-file /tmp/backend-audit.txt > /dev/null
+          uvx --from pip-audit==2.10.1 pip-audit --disable-pip --no-deps -r /tmp/backend-audit.txt
+
       - name: Executer les tests backend
         run: uv run --no-sync pytest -q --tb=short -rs
 
@@ -273,6 +278,7 @@ jobs:
             ghcr.io/emilezehouri/incident-backend:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
       - name: Publier l'image frontend
         uses: docker/build-push-action@v7
@@ -286,6 +292,7 @@ jobs:
             ghcr.io/emilezehouri/incident-frontend:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
 
 
