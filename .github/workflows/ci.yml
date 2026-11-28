@@ -286,7 +286,7 @@ jobs:
           context: ./incident-management-platform/frontend
           push: true
           build-args: |
-            API_URL=http://backend:8000
+            API_URL=https://incident-backend-sha.onrender.com
           tags: |
             ghcr.io/emilezehouri/incident-frontend:latest
             ghcr.io/emilezehouri/incident-frontend:sha-${{ github.sha }}
